@@ -51,6 +51,7 @@ pipeline {
         stage('Docker - Build Images') {
             steps {
                 echo 'Building Docker images via Docker Compose...'
+                sh 'test -f .env || cp .env.example .env'
                 sh 'docker compose build'
             }
         }
