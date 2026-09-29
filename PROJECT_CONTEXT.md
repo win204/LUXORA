@@ -254,7 +254,6 @@
 - Guest checkout.
 - OAuth.
 - Kubernetes manifests.
-- GitHub Actions CI/CD.
 - Full Prometheus/Grafana/OpenTelemetry observability stack.
 
 ## 11. Known Issues / Technical Debt
