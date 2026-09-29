@@ -1,0 +1,95 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_DB: ${SQLSERVER_DB:-luxora}
+      MSSQL_SA_PASSWORD: ${SQLSERVER_BOOTSTRAP_PASSWORD:?Set SQLSERVER_BOOTSTRAP_PASSWORD in .env}
+      SQLSERVER_PASSWORD: ${SQLSERVER_PASSWORD:?Set SQLSERVER_PASSWORD in .env}
+    ports:
+      - "${SQLSERVER_PORT:-1433}:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    command: >
+      /bin/bash -c '
+      if [ -f /var/opt/mssql/data/master.mdf ]; then
+        PREFERRED_PASSWORD="$$SQLSERVER_PASSWORD";
+        FALLBACK_PASSWORD="$$MSSQL_SA_PASSWORD";
+      else
+        PREFERRED_PASSWORD="$$MSSQL_SA_PASSWORD";
+        FALLBACK_PASSWORD="";
+      fi;
+      /opt/mssql/bin/sqlservr &
+      sqlservr_pid=$$!;
+      SQLCMD=/opt/mssql-tools18/bin/sqlcmd;
+      if [ ! -x "$$SQLCMD" ]; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi;
+      until "$$SQLCMD" -C -S localhost -U sa -P "$$PREFERRED_PASSWORD" -Q "SELECT 1"; do
+        if [ -n "$$FALLBACK_PASSWORD" ] && "$$SQLCMD" -C -S localhost -U sa -P "$$FALLBACK_PASSWORD" -Q "SELECT 1"; then
+          PREFERRED_PASSWORD="$$FALLBACK_PASSWORD";
+          break;
+        fi;
+        sleep 2;
+      done;
+      "$$SQLCMD" -C -S localhost -U sa -P "$$PREFERRED_PASSWORD" -Q "IF DB_ID(N'\''$$MSSQL_DB'\'') IS NULL CREATE DATABASE [$$MSSQL_DB]";
+      if [ "$$PREFERRED_PASSWORD" != "$$SQLSERVER_PASSWORD" ]; then
+        "$$SQLCMD" -C -S localhost -U sa -P "$$PREFERRED_PASSWORD" -Q "ALTER LOGIN [sa] WITH PASSWORD = '\''$$SQLSERVER_PASSWORD'\'', CHECK_POLICY = OFF";
+      fi;
+      wait $$sqlservr_pid
+      '
+    healthcheck:
+      test: ["CMD-SHELL", "SQLCMD=/opt/mssql-tools18/bin/sqlcmd; if [ ! -x \"$$SQLCMD\" ]; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi; \"$$SQLCMD\" -C -S localhost -U sa -P \"$${SQLSERVER_PASSWORD}\" -d \"$${MSSQL_DB}\" -Q \"SELECT 1\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      DATABASE_URL: ${DATABASE_URL:-jdbc:sqlserver://sqlserver:1433;databaseName=luxora;encrypt=true;trustServerCertificate=true}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-sa}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      SERVER_PORT: 8080
+      REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-false}
+      REFRESH_COOKIE_SAME_SITE: ${REFRESH_COOKIE_SAME_SITE:-Lax}
+      REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/api/v1/auth}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://backend:8080}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+
+volumes:
+  sqlserver-data:
+  redis-data:

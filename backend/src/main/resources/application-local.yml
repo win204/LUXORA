@@ -1,0 +1,7 @@
+luxora:
+  seed:
+    catalog:
+      enabled: ${LUXORA_SEED_CATALOG_ENABLED:true}
+  auth:
+    refresh-cookie:
+      secure: false

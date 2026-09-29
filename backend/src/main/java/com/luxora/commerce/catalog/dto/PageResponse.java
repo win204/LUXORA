@@ -1,0 +1,13 @@
+package com.luxora.commerce.catalog.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+
+@Schema(description = "Paginated API response")
+public record PageResponse<T>(
+        List<T> content,
+        int page,
+        int size,
+        long totalElements,
+        int totalPages) {
+}

@@ -1,0 +1,1 @@
+import {AdminPromotionForm} from "@/components/AdminPromotionForm"; export default function Page(){return <main className="page"><AdminPromotionForm/></main>}

@@ -1,0 +1,8 @@
+package com.luxora.commerce.promotion.api;
+import com.luxora.commerce.catalog.dto.PageResponse; import com.luxora.commerce.promotion.dto.*; import com.luxora.commerce.promotion.service.PromotionService; import io.swagger.v3.oas.annotations.*; import io.swagger.v3.oas.annotations.tags.Tag; import io.swagger.v3.oas.annotations.security.SecurityRequirement; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import java.util.UUID; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1/admin/promotions") @Tag(name="Admin Promotions") @SecurityRequirement(name="bearerAuth") @org.springframework.validation.annotation.Validated
+public class AdminPromotionController {private final PromotionService service; public AdminPromotionController(PromotionService service){this.service=service;}
+@GetMapping @Operation(summary="Admin promotions") PageResponse<PromotionResponse> list(@RequestParam(defaultValue="0")@Min(0)int page,@RequestParam(defaultValue="10")@Min(1)@Max(50)int size,@RequestParam(required=false)Boolean active,@RequestParam(required=false)@Size(max=160)String search){return service.list(page,size,active,search);}
+@GetMapping("/{id}") @Operation(summary="Promotion detail") PromotionResponse get(@PathVariable UUID id){return service.get(id);}
+@PostMapping @ResponseStatus(org.springframework.http.HttpStatus.CREATED) @Operation(summary="Create promotion") PromotionResponse create(@Valid @RequestBody PromotionUpsertRequest r){return service.create(r);}
+@PatchMapping("/{id}") @Operation(summary="Update promotion") PromotionResponse update(@PathVariable UUID id,@Valid @RequestBody PromotionUpsertRequest r){return service.update(id,r);}}

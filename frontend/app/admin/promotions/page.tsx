@@ -1,0 +1,1 @@
+import {AdminPromotionsView} from "@/components/AdminPromotionsView"; export default function Page(){return <main className="page"><AdminPromotionsView/></main>}

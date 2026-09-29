@@ -1,0 +1,3 @@
+package com.luxora.commerce.checkout.dto;
+import jakarta.validation.constraints.*;
+public record CheckoutPreviewRequest(@NotBlank @Size(max=160) String recipientName,@NotBlank @Size(max=32) @Pattern(regexp="^[+0-9() .-]{7,32}$",message="Phone number is invalid") String phone,@NotBlank @Size(max=240) String addressLine1,@Size(max=240) String addressLine2,@NotBlank @Size(max=120) String city,@NotBlank @Size(max=120) String province,@NotBlank @Size(max=120) String country,@Size(max=24) String postalCode,@Size(max=64) String promotionCode) {}

@@ -1,0 +1,3 @@
+package com.luxora.commerce.checkout.dto;
+import com.luxora.commerce.promotion.dto.AppliedPromotionResponse; import java.math.BigDecimal; import java.util.List;
+public record CheckoutPreviewResponse(List<CheckoutPreviewItemResponse> items,ShippingAddressResponse shippingAddress,BigDecimal subtotal,BigDecimal shippingFee,BigDecimal tax,BigDecimal discount,BigDecimal grandTotal,String currency,AppliedPromotionResponse promotion) {}

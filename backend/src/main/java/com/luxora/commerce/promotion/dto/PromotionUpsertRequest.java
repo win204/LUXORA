@@ -1,0 +1,3 @@
+package com.luxora.commerce.promotion.dto;
+import com.luxora.commerce.promotion.model.PromotionType; import jakarta.validation.constraints.*; import java.math.BigDecimal; import java.time.Instant;
+public record PromotionUpsertRequest(@NotBlank @Size(max=64) String code,@NotBlank @Size(max=160) String name,@Size(max=500) String description,@NotNull PromotionType type,@NotNull @DecimalMin(value="0.01") @Digits(integer=10,fraction=2) BigDecimal value,@DecimalMin(value="0.00") @Digits(integer=10,fraction=2) BigDecimal minimumOrderAmount,@DecimalMin(value="0.00") @Digits(integer=10,fraction=2) BigDecimal maximumDiscountAmount,@NotNull Instant startsAt,@NotNull Instant endsAt,@Positive Integer usageLimit,boolean active){}

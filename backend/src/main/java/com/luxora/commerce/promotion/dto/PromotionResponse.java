@@ -1,0 +1,3 @@
+package com.luxora.commerce.promotion.dto;
+import com.luxora.commerce.promotion.model.PromotionType; import java.math.BigDecimal; import java.time.Instant; import java.util.UUID;
+public record PromotionResponse(UUID id,String code,String name,String description,PromotionType type,BigDecimal value,BigDecimal minimumOrderAmount,BigDecimal maximumDiscountAmount,Instant startsAt,Instant endsAt,Integer usageLimit,int usageCount,boolean active,Instant createdAt,Instant updatedAt){}
