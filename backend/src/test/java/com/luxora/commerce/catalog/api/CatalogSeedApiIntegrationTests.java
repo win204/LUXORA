@@ -12,7 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("local")
-@SpringBootTest
+@SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:h2:mem:luxora-catalog-seed-test;MODE=MSSQLServer;DATABASE_TO_UPPER=false;DEFAULT_NULL_ORDERING=HIGH"
+})
 @AutoConfigureMockMvc
 class CatalogSeedApiIntegrationTests {
 

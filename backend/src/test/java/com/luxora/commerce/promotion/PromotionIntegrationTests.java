@@ -62,7 +62,7 @@ class PromotionIntegrationTests {
         reset(cartStore);
         jdbc.update("delete from payments"); jdbc.update("delete from order_items"); jdbc.update("delete from orders"); jdbc.update("delete from promotions");
         jdbc.update("update product_variants set active = true");
-        jdbc.update("update inventory_items set quantity_available = 40");
+        jdbc.update("update inventory_items set quantity_available = 40 where variant_id in (select id from product_variants where sku = 'AUR-X1-GRF-128')");
     }
 
     @Test void percentageFixedCapAndCodeNormalizationAreAuthoritative() {
