@@ -3,6 +3,9 @@ package com.luxora.commerce.promotion.api;
 import com.luxora.commerce.cart.service.CartStore;
 import com.luxora.commerce.catalog.model.ProductVariant;
 import com.luxora.commerce.catalog.repository.ProductVariantRepository;
+import com.luxora.commerce.promotion.model.Promotion;
+import com.luxora.commerce.promotion.model.PromotionType;
+import com.luxora.commerce.promotion.repository.PromotionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,12 +45,42 @@ class PromotionAutoApplyIntegrationTests {
     @Autowired
     private ProductVariantRepository variantRepository;
 
+    @Autowired
+    private PromotionRepository promotionRepository;
+
     @MockitoBean
     private CartStore cartStore;
 
     @BeforeEach
     void resetCart() {
         reset(cartStore);
+        promotionRepository.deleteAll();
+
+        promotionRepository.save(new Promotion(
+                "LUXORA10",
+                "Giảm 10% cho đơn hàng đầu tiên",
+                "Áp dụng giảm 10% tối đa $100 cho đơn hàng từ $200",
+                PromotionType.PERCENTAGE,
+                new BigDecimal("10.00"),
+                new BigDecimal("200.00"),
+                new BigDecimal("100.00"),
+                Instant.now().minus(1, ChronoUnit.DAYS),
+                Instant.now().plus(365, ChronoUnit.DAYS),
+                500,
+                true));
+
+        promotionRepository.save(new Promotion(
+                "WELCOME50",
+                "Giảm ngay $50 cho đơn hàng cao cấp",
+                "Áp dụng giảm trực tiếp $50 cho đơn hàng từ $300",
+                PromotionType.FIXED_AMOUNT,
+                new BigDecimal("50.00"),
+                new BigDecimal("300.00"),
+                new BigDecimal("50.00"),
+                Instant.now().minus(1, ChronoUnit.DAYS),
+                Instant.now().plus(365, ChronoUnit.DAYS),
+                200,
+                true));
     }
 
     @Test

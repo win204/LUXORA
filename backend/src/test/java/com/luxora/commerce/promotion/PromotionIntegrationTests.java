@@ -30,6 +30,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,14 @@ class PromotionIntegrationTests {
         jdbc.update("delete from payments"); jdbc.update("delete from order_items"); jdbc.update("delete from orders"); jdbc.update("delete from promotions");
         jdbc.update("update product_variants set active = true");
         jdbc.update("update inventory_items set quantity_available = 40 where variant_id in (select id from product_variants where sku = 'AUR-X1-GRF-128')");
+    }
+
+    @AfterEach
+    void cleanUpState() {
+        jdbc.update("delete from payments");
+        jdbc.update("delete from order_items");
+        jdbc.update("delete from orders");
+        jdbc.update("delete from promotions");
     }
 
     @Test void percentageFixedCapAndCodeNormalizationAreAuthoritative() {
