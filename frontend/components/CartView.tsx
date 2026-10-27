@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -7,8 +7,10 @@ import type { Cart } from "@/lib/types";
 import { EmptyState } from "./EmptyState";
 import { ErrorState } from "./ErrorState";
 import { Price } from "./Price";
+import { useAuth } from "./AuthProvider";
 
 export function CartView() {
+  const { user } = useAuth();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -123,9 +125,20 @@ export function CartView() {
           <span>Subtotal</span>
           <Price amount={cart.subtotalTotal} />
         </div>
-        <Link className="button button-primary" href="/checkout">
-          Proceed to checkout
-        </Link>
+        {user ? (
+          <Link className="button button-primary" href="/checkout">
+            Tiến hành đặt hàng
+          </Link>
+        ) : (
+          <>
+            <Link className="button button-primary" href="/login?redirect=/checkout">
+              Đăng nhập để đặt hàng
+            </Link>
+            <p className="meta-line" style={{ fontSize: "0.76rem", textAlign: "center", color: "var(--muted)", margin: "8px 0 0" }}>
+              Bắt buộc đăng nhập để mua hàng &amp; tích điểm VIP
+            </p>
+          </>
+        )}
         <button className="button button-secondary" type="button" onClick={handleClear}>
           Clear cart
         </button>

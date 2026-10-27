@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="db/changelog/changesets/001-catalog-foundation.xml"/>
+    <include file="db/changelog/changesets/002-auth-user-foundation.xml"/>
+    <include file="db/changelog/changesets/003-auth-timestamps.xml"/>
+    <include file="db/changelog/changesets/004-order-foundation.xml"/>
+    <include file="db/changelog/changesets/005-payment-foundation.xml"/>
+    <include file="db/changelog/changesets/006-order-status-history.xml"/>
+    <include file="db/changelog/changesets/007-refund-foundation.xml"/>
+    <include file="db/changelog/changesets/008-shipment-foundation.xml"/>
+    <include file="db/changelog/changesets/009-return-rma-foundation.xml"/>
+    <include file="db/changelog/changesets/010-return-shipment-foundation.xml"/>
+    <include file="db/changelog/changesets/011-admin-order-operations.xml"/>
+    <include file="db/changelog/changesets/012-promotion-foundation.xml"/>
+    <include file="db/changelog/changesets/013-guest-checkout-foundation.xml"/>
+    <include file="db/changelog/changesets/014-product-reviews-foundation.xml"/>
+    <include file="db/changelog/changesets/015-loyalty-points-foundation.xml"/>
+    <include file="db/changelog/changesets/016-flash-sale-foundation.xml"/>
+    <include file="db/changelog/changesets/017-banner-foundation.xml"/>
+
+</databaseChangeLog>

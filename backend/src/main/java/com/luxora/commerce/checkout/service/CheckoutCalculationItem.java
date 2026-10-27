@@ -16,5 +16,22 @@ public record CheckoutCalculationItem(
         String imageUrl,
         BigDecimal unitPrice,
         int quantity,
-        BigDecimal lineTotal) {
+        BigDecimal lineTotal,
+        UUID flashSaleItemId) {
+
+    public CheckoutCalculationItem(
+            ProductVariant variant,
+            UUID productId,
+            UUID variantId,
+            String slug,
+            String name,
+            String sku,
+            String color,
+            String storage,
+            String imageUrl,
+            BigDecimal unitPrice,
+            int quantity,
+            BigDecimal lineTotal) {
+        this(variant, productId, variantId, slug, name, sku, color, storage, imageUrl, unitPrice, quantity, lineTotal, null);
+    }
 }

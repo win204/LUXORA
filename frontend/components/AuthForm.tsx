@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -23,6 +23,8 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const notice = searchParams.get("notice");
+  const redirectParam = searchParams.get("redirect");
+  const redirectUrl = redirectParam || "/cart";
 
   const isRegister = mode === "register";
 
@@ -36,7 +38,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         ? await register({ email, password, firstName, lastName })
         : await login({ email, password }, getStoredCartId());
       setAuthenticated(response);
-      router.push("/cart");
+      router.push(redirectUrl);
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to continue.");
@@ -109,7 +111,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <p className="auth-switch">
         {isRegister ? "Already have an account?" : "New to LUXORA?"}{" "}
-        <Link href={isRegister ? "/login" : "/register"}>
+        <Link href={isRegister ? (redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login") : (redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : "/register")}>
           {isRegister ? "Login" : "Create one"}
         </Link>
       </p>

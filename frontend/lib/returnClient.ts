@@ -42,7 +42,7 @@ async function returnRequest<T>(path: string, options: ReturnRequestOptions = {}
   let accessToken = getAccessToken();
   let response = await send(path, accessToken, options);
 
-  if (response.status === 401 && accessToken) {
+  if (response.status === 401) {
     try {
       const refreshed = await refreshAndStoreSession();
       accessToken = refreshed.accessToken;

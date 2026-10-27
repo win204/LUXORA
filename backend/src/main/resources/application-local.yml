@@ -2,6 +2,7 @@ luxora:
   seed:
     catalog:
       enabled: ${LUXORA_SEED_CATALOG_ENABLED:true}
+      extended: ${LUXORA_SEED_CATALOG_EXTENDED:true}
   auth:
     refresh-cookie:
       secure: false

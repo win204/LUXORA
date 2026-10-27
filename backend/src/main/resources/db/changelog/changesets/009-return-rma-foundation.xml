@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="009-01-create-returns" author="luxora">
+        <createTable tableName="returns">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_returns_order" references="orders(id)"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_returns_user" references="users(id)"/>
+            </column>
+            <column name="status" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="customer_note" type="VARCHAR(500)"/>
+            <column name="admin_note" type="VARCHAR(500)"/>
+            <column name="requested_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approved_at" type="datetimeoffset(7)"/>
+            <column name="rejected_at" type="datetimeoffset(7)"/>
+            <column name="received_at" type="datetimeoffset(7)"/>
+            <column name="refunded_at" type="datetimeoffset(7)"/>
+            <column name="cancelled_at" type="datetimeoffset(7)"/>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="returns" indexName="idx_returns_user_requested_at">
+            <column name="user_id"/>
+            <column name="requested_at" descending="true"/>
+        </createIndex>
+        <createIndex tableName="returns" indexName="idx_returns_order">
+            <column name="order_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="009-02-create-return-items" author="luxora">
+        <createTable tableName="return_items">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="return_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_return_items_return" references="returns(id)"/>
+            </column>
+            <column name="order_item_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_return_items_order_item" references="order_items(id)"/>
+            </column>
+            <column name="requested_quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approved_quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="received_quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reason" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_name" type="VARCHAR(180)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sku" type="VARCHAR(80)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit_price" type="DECIMAL(12, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="return_items" indexName="idx_return_items_order_item">
+            <column name="order_item_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="009-03-create-return-status-history" author="luxora">
+        <createTable tableName="return_status_history">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="return_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_return_status_history_return" references="returns(id)"/>
+            </column>
+            <column name="from_status" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="to_status" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="changed_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="changed_by_user_id" type="UUID">
+                <constraints foreignKeyName="fk_return_status_history_user" references="users(id)"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="return_status_history" indexName="idx_return_status_history_return">
+            <column name="return_id"/>
+            <column name="changed_at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="009-04-add-refunds-return-id" author="luxora">
+        <addColumn tableName="refunds">
+            <column name="return_id" type="UUID">
+                <constraints foreignKeyName="fk_refunds_return" references="returns(id)"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

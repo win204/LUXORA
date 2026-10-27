@@ -13,5 +13,6 @@ public record ProductListResponse(
         BrandResponse brand,
         CategoryResponse category,
         BigDecimal minPrice,
-        boolean inStock) {
+        boolean inStock,
+        String imageUrl) {
 }

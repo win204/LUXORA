@@ -3,17 +3,32 @@ import Link from "next/link";
 import { Button } from "@/components/Button";
 import { Container } from "@/components/Container";
 import { EmptyState } from "@/components/EmptyState";
-import { ErrorState } from "@/components/ErrorState";
 import { ProductGrid } from "@/components/ProductGrid";
 import { getBrands, getCategories, getProducts } from "@/lib/api";
-import type { Brand, Category, ProductQuery } from "@/lib/types";
+import { FALLBACK_PRODUCTS } from "@/lib/fallbackProducts";
+import type { Brand, Category, ProductListItem, ProductQuery } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Shop",
-  description: "Browse LUXORA products with search, filters, pricing, and availability."
+  title: "Bộ Sưu Tập Tuyệt Tác | LUXORA Maison",
+  description: "Khám phá danh mục xa xỉ phẩm kỹ thuật số, đồng hồ chế tác và thiết bị âm thanh đỉnh cao."
 };
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: "c-1", name: "Smartphones", slug: "smartphones" },
+  { id: "c-2", name: "Smart Horology", slug: "horology" },
+  { id: "c-3", name: "Audio & Acoustics", slug: "audio" },
+  { id: "c-4", name: "Luxury Accessories", slug: "accessories" }
+];
+
+const DEFAULT_BRANDS: Brand[] = [
+  { id: "b-1", name: "Aero Flagship", slug: "aero" },
+  { id: "b-2", name: "Chrono Horology", slug: "chrono" },
+  { id: "b-3", name: "Opus Acoustics", slug: "opus" },
+  { id: "b-4", name: "Lumina Studio", slug: "lumina" },
+  { id: "b-5", name: "LUXORA Maison", slug: "luxora-studio" }
+];
 
 type ShopPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -28,87 +43,154 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     getBrandsResult()
   ]);
 
+  const categories = categoriesResult.ok && categoriesResult.categories.length > 0
+    ? categoriesResult.categories
+    : DEFAULT_CATEGORIES;
+
+  const brands = brandsResult.ok && brandsResult.brands.length > 0
+    ? brandsResult.brands
+    : DEFAULT_BRANDS;
+
+  // Resolved products: live API data if available, or filtered curated showcase
+  let displayProducts: ProductListItem[] = [];
+  let totalCount = 0;
+  let totalPages = 1;
+  let isFallbackMode = false;
+
+  if (productsResult.ok && productsResult.page.content.length > 0) {
+    displayProducts = productsResult.page.content;
+    totalCount = productsResult.page.totalElements;
+    totalPages = productsResult.page.totalPages;
+  } else if (productsResult.ok && productsResult.page.content.length === 0) {
+    displayProducts = [];
+    totalCount = 0;
+    totalPages = 0;
+  } else {
+    // Graceful luxury showcase fallback
+    isFallbackMode = true;
+    let filtered = [...FALLBACK_PRODUCTS];
+    if (query.category) {
+      filtered = filtered.filter((p) => p.category.slug === query.category);
+    }
+    if (query.brand) {
+      filtered = filtered.filter((p) => p.brand.slug === query.brand);
+    }
+    if (query.search) {
+      const s = query.search.toLowerCase();
+      filtered = filtered.filter((p) => p.name.toLowerCase().includes(s) || (p.subtitle && p.subtitle.toLowerCase().includes(s)));
+    }
+    displayProducts = filtered;
+    totalCount = filtered.length;
+    totalPages = 1;
+  }
+
   return (
-    <main className="page">
+    <main className="page shop-luxury-page">
       <Container>
-        <div className="page-heading">
-          <p className="eyebrow">Shop</p>
-          <h1>Catalog</h1>
-          <p>Filter the live catalog by product story, category, brand, and price.</p>
+        <div className="page-heading shop-page-heading">
+          <p className="eyebrow">LUXORA MAISON · CATALOGUE D&apos;EXCEPTION</p>
+          <h1 className="gold-text">Curated Catalogue</h1>
+          <p className="shop-heading-sub">
+            Tuyển tập những tuyệt tác công nghệ và chế tác tinh xảo, định hình chuẩn mực xa xỉ đương đại.
+          </p>
         </div>
 
-        <form className="filter-bar" action="/shop">
+        {/* Quick Category Navigation Pills */}
+        <div className="category-quick-pills" role="navigation" aria-label="Quick category filters">
+          <Link
+            href="/shop"
+            className={!query.category ? "category-pill is-active" : "category-pill"}
+          >
+            Tất cả Tuyệt tác
+          </Link>
+          {categories.map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/shop?category=${cat.slug}`}
+              className={query.category === cat.slug ? "category-pill is-active" : "category-pill"}
+            >
+              {cat.name}
+            </Link>
+          ))}
+        </div>
+
+        {/* Filter Bar */}
+        <form className="filter-bar shop-filter-bar" action="/shop">
           <label>
-            <span>Search</span>
-            <input name="search" defaultValue={query.search} placeholder="AeroPhone" />
+            <span>Tìm kiếm</span>
+            <input name="search" defaultValue={query.search} placeholder="AeroPhone, Chrono..." />
           </label>
           <label>
-            <span>Category</span>
+            <span>Danh mục</span>
             <select name="category" defaultValue={query.category}>
-              <option value="">All categories</option>
-              {categoriesResult.ok
-                ? categoriesResult.categories.map((category) => (
-                    <option key={category.id} value={category.slug}>
-                      {category.name}
-                    </option>
-                  ))
-                : null}
+              <option value="">Tất cả danh mục</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.slug}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </label>
           <label>
-            <span>Brand</span>
+            <span>Thương hiệu</span>
             <select name="brand" defaultValue={query.brand}>
-              <option value="">All brands</option>
-              {brandsResult.ok
-                ? brandsResult.brands.map((brand) => (
-                    <option key={brand.id} value={brand.slug}>
-                      {brand.name}
-                    </option>
-                  ))
-                : null}
+              <option value="">Tất cả thương hiệu</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.slug}>
+                  {brand.name}
+                </option>
+              ))}
             </select>
           </label>
           <label>
-            <span>Min</span>
+            <span>Giá từ ($)</span>
             <input name="minPrice" defaultValue={query.minPrice} inputMode="decimal" placeholder="0" />
           </label>
           <label>
-            <span>Max</span>
-            <input name="maxPrice" defaultValue={query.maxPrice} inputMode="decimal" placeholder="1200" />
+            <span>Đến ($)</span>
+            <input name="maxPrice" defaultValue={query.maxPrice} inputMode="decimal" placeholder="5000" />
           </label>
           <label>
-            <span>Sort</span>
+            <span>Sắp xếp</span>
             <select name="sort" defaultValue={query.sort ?? "newest"}>
-              <option value="newest">Newest</option>
-              <option value="nameAsc">Name</option>
-              <option value="priceAsc">Price low</option>
-              <option value="priceDesc">Price high</option>
+              <option value="newest">Mới nhất Maison</option>
+              <option value="priceAsc">Giá tăng dần</option>
+              <option value="priceDesc">Giá giảm dần</option>
+              <option value="nameAsc">Tên A-Z</option>
             </select>
           </label>
-          <Button type="submit">Apply</Button>
+          <Button type="submit">Lọc Sản Phẩm</Button>
           <Link className="clear-link" href="/shop">
-            Reset
+            Đặt Lại
           </Link>
         </form>
 
-        {productsResult.ok ? (
-          <>
-            <div className="results-bar">
-              <p>{productsResult.page.totalElements} products</p>
-              <p>
-                Page {productsResult.page.page + 1} of {Math.max(productsResult.page.totalPages, 1)}
-              </p>
-            </div>
-            {productsResult.page.content.length > 0 ? (
-              <ProductGrid products={productsResult.page.content} />
-            ) : (
-              <EmptyState title="No products found" message="Try adjusting the filters." />
-            )}
-            <Pagination query={query} totalPages={productsResult.page.totalPages} />
-          </>
-        ) : (
-          <ErrorState message={productsResult.message} />
+        {isFallbackMode && (
+          <div className="showcase-mode-banner">
+            <span className="showcase-mode-badge">MAISON SHOWCASE</span>
+            <span>Hiển thị tuyển tập tuyển chọn trực tiếp từ danh mục chính thức của Maison LUXORA</span>
+          </div>
         )}
+
+        <div className="results-bar">
+          <p>
+            <strong className="gold-text">{totalCount}</strong> tuyệt tác sẵn sàng phục vụ
+          </p>
+          <p>
+            Trang {Number(query.page ?? "0") + 1} / {Math.max(totalPages, 1)}
+          </p>
+        </div>
+
+        {displayProducts.length > 0 ? (
+          <ProductGrid products={displayProducts} />
+        ) : (
+          <EmptyState
+            title="Không tìm thấy tuyệt tác phù hợp"
+            message="Quý khách vui lòng điều chỉnh lại bộ lọc hoặc đặt lại tiêu chí tìm kiếm."
+          />
+        )}
+
+        <Pagination query={query} totalPages={totalPages} />
       </Container>
     </main>
   );

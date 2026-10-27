@@ -32,8 +32,13 @@ class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/v1/products/*/reviews").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/*/reviews/me").authenticated()
+                        .requestMatchers("/api/v1/loyalty", "/api/v1/loyalty/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products", "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/brands").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/banners", "/api/v1/banners/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/promotions/available").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
@@ -42,19 +47,23 @@ class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/me/password").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/checkout/preview").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/orders").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/checkout/preview").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/cancel").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/payments").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/payments/latest").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/cancel").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/payments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/payments/latest").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay-ipn", "/api/v1/payments/vnpay-return").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/shipments/ghn-webhook").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/returns").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/returns").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/returns/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/returns/*/cancel").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/returns/*/mark-shipped").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/**").permitAll()
                         .requestMatchers("/api/v1/cart", "/api/v1/cart/**").permitAll()
+                        .requestMatchers("/api/v1/flash-sales", "/api/v1/flash-sales/**").permitAll()
+                        .requestMatchers("/api/v1/media", "/api/v1/media/**").permitAll()
                         .anyRequest().denyAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -64,11 +73,9 @@ class SecurityConfig {
     JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, RestAuthenticationEntryPoint authenticationEntryPoint) {
         return new JwtAuthenticationFilter(jwtService, authenticationEntryPoint);
     }
+
     @Bean
     UserDetailsService userDetailsService() {
         return username -> { throw new UsernameNotFoundException(username); };
     }
 }
-
-
-

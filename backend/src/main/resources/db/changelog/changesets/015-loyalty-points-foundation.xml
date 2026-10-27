@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="015-01-create-loyalty-accounts-table" author="luxora">
+        <createTable tableName="loyalty_accounts">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" unique="true" foreignKeyName="fk_loyalty_account_user" references="users(id)"/>
+            </column>
+            <column name="current_points" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lifetime_points" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tier" type="VARCHAR(30)" defaultValue="SILVER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="loyalty_accounts" indexName="idx_loyalty_accounts_user">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex tableName="loyalty_accounts" indexName="idx_loyalty_accounts_tier">
+            <column name="tier"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="015-02-create-loyalty-transactions-table" author="luxora">
+        <createTable tableName="loyalty_transactions">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="account_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_loyalty_tx_account" references="loyalty_accounts(id)" deleteCascade="true"/>
+            </column>
+            <column name="order_id" type="UUID">
+                <constraints nullable="true" foreignKeyName="fk_loyalty_tx_order" references="orders(id)"/>
+            </column>
+            <column name="points" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="loyalty_transactions" indexName="idx_loyalty_tx_account">
+            <column name="account_id"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="015-03-add-orders-loyalty-columns" author="luxora">
+        <addColumn tableName="orders">
+            <column name="loyalty_points_redeemed" type="INT" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+            <column name="loyalty_discount" type="DECIMAL(12, 2)" defaultValueNumeric="0.00">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

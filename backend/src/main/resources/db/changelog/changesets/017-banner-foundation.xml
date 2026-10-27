@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="017-01-create-banners-table" author="luxora">
+        <createTable tableName="banners">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subtitle" type="VARCHAR(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="image_url" type="VARCHAR(1000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="link_url" type="VARCHAR(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="cta_text" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="display_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="starts_at" type="datetimeoffset(7)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ends_at" type="datetimeoffset(7)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="banners" indexName="idx_banners_active_order">
+            <column name="active"/>
+            <column name="display_order"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

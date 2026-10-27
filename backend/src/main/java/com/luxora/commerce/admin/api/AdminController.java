@@ -130,6 +130,15 @@ public class AdminController {
         return adminService.removeImage(id, imageId);
     }
 
+    @PatchMapping("/products/{id}/images/{imageId}")
+    @Operation(summary = "Update product image", description = "Updates an image URL, alt text, or display order for a product.")
+    AdminProductDetailResponse updateImage(
+            @PathVariable UUID id,
+            @PathVariable UUID imageId,
+            @Valid @RequestBody AdminProductImageRequest request) {
+        return adminService.updateImage(id, imageId, request);
+    }
+
     @PostMapping("/products/{id}/specifications")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Add product specification", description = "Adds a specification row to a product.")

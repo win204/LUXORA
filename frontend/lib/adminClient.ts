@@ -29,7 +29,10 @@ import type {
   PageResponse,
   ReturnRefundPayload,
   ReturnRequest,
-  ReturnSummary
+  ReturnSummary,
+  AdminAnalyticsOverview,
+  RevenueTimelinePoint,
+  TopSellingProduct
 } from "./types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
@@ -50,6 +53,19 @@ export function getAdminPromotions(page = 0, size = 10, active?: boolean, search
 export function getAdminPromotion(id: string) { return adminRequest<AdminPromotion>(`/api/v1/admin/promotions/${encodeURIComponent(id)}`); }
 export function createAdminPromotion(payload: AdminPromotionPayload) { return adminRequest<AdminPromotion>("/api/v1/admin/promotions", { method: "POST", body: payload }); }
 export function updateAdminPromotion(id: string, payload: AdminPromotionPayload) { return adminRequest<AdminPromotion>(`/api/v1/admin/promotions/${encodeURIComponent(id)}`, { method: "PATCH", body: payload }); }
+
+export function getAdminAnalyticsOverview() {
+  return adminRequest<AdminAnalyticsOverview>("/api/v1/admin/analytics/overview");
+}
+
+export function getAdminRevenueTimeline(period = "7d") {
+  return adminRequest<RevenueTimelinePoint[]>(`/api/v1/admin/analytics/timeline?period=${encodeURIComponent(period)}`);
+}
+
+export function getAdminTopSellingProducts(limit = 5) {
+  return adminRequest<TopSellingProduct[]>(`/api/v1/admin/analytics/top-products?limit=${limit}`);
+}
+
 export function getAdminDashboard() {
   return adminRequest<AdminDashboard>("/api/v1/admin/dashboard");
 }
@@ -89,6 +105,10 @@ export function addAdminProductImage(productId: string, payload: AdminImagePaylo
 
 export function removeAdminProductImage(productId: string, imageId: string) {
   return adminRequest<AdminProductDetail>(`/api/v1/admin/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(imageId)}`, { method: "DELETE" });
+}
+
+export function updateAdminProductImage(productId: string, imageId: string, payload: AdminImagePayload) {
+  return adminRequest<AdminProductDetail>(`/api/v1/admin/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(imageId)}`, { method: "PATCH", body: payload });
 }
 
 export function addAdminProductSpecification(productId: string, payload: AdminSpecificationPayload) {
@@ -196,7 +216,7 @@ async function adminRequest<T>(path: string, options: AdminRequestOptions = {}) 
   let accessToken = getAccessToken();
   let response = await send(path, accessToken, options);
 
-  if (response.status === 401 && accessToken) {
+  if (response.status === 401) {
     try {
       const refreshed = await refreshAndStoreSession();
       accessToken = refreshed.accessToken;

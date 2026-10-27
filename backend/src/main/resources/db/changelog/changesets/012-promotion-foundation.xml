@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="012-01-create-promotions" author="luxora">
+        <createTable tableName="promotions">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="name" type="VARCHAR(160)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="DECIMAL(12, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="minimum_order_amount" type="DECIMAL(12, 2)"/>
+            <column name="maximum_discount_amount" type="DECIMAL(12, 2)"/>
+            <column name="starts_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ends_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="usage_limit" type="INT"/>
+            <column name="usage_count" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="promotions" indexName="idx_promotions_active_dates">
+            <column name="active"/>
+            <column name="starts_at"/>
+            <column name="ends_at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="012-02-add-orders-promotion-columns" author="luxora">
+        <addColumn tableName="orders">
+            <column name="promotion_code" type="VARCHAR(64)"/>
+            <column name="promotion_name" type="VARCHAR(160)"/>
+            <column name="promotion_type" type="VARCHAR(32)"/>
+            <column name="promotion_value" type="DECIMAL(12, 2)"/>
+            <column name="promotion_discount_amount" type="DECIMAL(12, 2)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

@@ -16,7 +16,12 @@ public class CheckoutPreviewService {
     }
 
     @Transactional(readOnly = true)
+    public CheckoutPreviewResponse preview(AuthenticatedUser user, String cartId, CheckoutPreviewRequest request) {
+        return checkoutCalculationService.calculate(user, cartId, request, false).toPreviewResponse();
+    }
+
+    @Transactional(readOnly = true)
     public CheckoutPreviewResponse preview(AuthenticatedUser user, CheckoutPreviewRequest request) {
-        return checkoutCalculationService.calculate(user.id(), request, false).toPreviewResponse();
+        return preview(user, null, request);
     }
 }

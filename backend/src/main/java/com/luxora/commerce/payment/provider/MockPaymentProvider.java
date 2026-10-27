@@ -1,9 +1,11 @@
 package com.luxora.commerce.payment.provider;
 
 import java.util.UUID;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-@Component
+@Primary
+@Component("mockPaymentProvider")
 class MockPaymentProvider implements PaymentProvider {
 
     private static final String PROVIDER = "MOCK";

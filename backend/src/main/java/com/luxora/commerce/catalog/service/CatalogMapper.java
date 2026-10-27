@@ -10,6 +10,7 @@ import com.luxora.commerce.catalog.dto.ProductVariantResponse;
 import com.luxora.commerce.catalog.model.Brand;
 import com.luxora.commerce.catalog.model.Category;
 import com.luxora.commerce.catalog.model.Product;
+import com.luxora.commerce.catalog.model.ProductImage;
 import com.luxora.commerce.catalog.model.ProductVariant;
 import com.luxora.commerce.catalog.repository.ProductListMeta;
 import com.luxora.commerce.inventory.model.InventoryItem;
@@ -29,6 +30,11 @@ class CatalogMapper {
     }
 
     ProductListResponse toProductListResponse(Product product, ProductListMeta meta) {
+        String imageUrl = product.getImages().stream()
+                .min(Comparator.comparingInt(ProductImage::getDisplayOrder))
+                .map(ProductImage::getUrl)
+                .orElse(null);
+
         return new ProductListResponse(
                 product.getId(),
                 product.getName(),
@@ -37,7 +43,8 @@ class CatalogMapper {
                 toBrandResponse(product.getBrand()),
                 toCategoryResponse(product.getCategory()),
                 meta.minPrice(),
-                meta.inStock());
+                meta.inStock(),
+                imageUrl);
     }
 
     ProductDetailResponse toProductDetailResponse(Product product) {

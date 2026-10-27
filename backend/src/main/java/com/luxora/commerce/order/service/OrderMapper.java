@@ -17,6 +17,8 @@ class OrderMapper {
     OrderResponse toResponse(Order order) {
         return new OrderResponse(
                 order.getId(),
+                order.getCustomerEmail(),
+                order.getGuestAccessToken(),
                 order.getStatus().name(),
                 order.getItems().stream().map(this::toItemResponse).toList(),
                 new ShippingAddressResponse(
@@ -35,7 +37,9 @@ class OrderMapper {
                 order.getGrandTotal(),
                 order.getCurrency(),
                 order.getCreatedAt(),
-                toShipmentResponse(order.getShipment()));
+                toShipmentResponse(order.getShipment()),
+                order.getLoyaltyPointsRedeemed(),
+                order.getLoyaltyDiscount());
     }
 
     OrderSummaryResponse toSummaryResponse(Order order) {
@@ -59,6 +63,7 @@ class OrderMapper {
                 shipment.getShippedAt(),
                 shipment.getDeliveredAt());
     }
+
     private OrderItemResponse toItemResponse(OrderItem item) {
         return new OrderItemResponse(
                 item.getId(),

@@ -12,6 +12,20 @@ public record PaymentResponse(
         BigDecimal amount,
         String currency,
         String status,
+        String paymentUrl,
         Instant createdAt,
         Instant updatedAt) {
+
+    public PaymentResponse(
+            UUID id,
+            UUID orderId,
+            String provider,
+            String providerReference,
+            BigDecimal amount,
+            String currency,
+            String status,
+            Instant createdAt,
+            Instant updatedAt) {
+        this(id, orderId, provider, providerReference, amount, currency, status, null, createdAt, updatedAt);
+    }
 }

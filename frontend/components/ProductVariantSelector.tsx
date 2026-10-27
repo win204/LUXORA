@@ -32,10 +32,14 @@ export function ProductVariantSelector({ variants }: ProductVariantSelectorProps
     try {
       await addCartItem(selectedVariant.id, 1);
       setStatus("success");
-      setMessage("Added to cart.");
+      setMessage("✦ Tuyệt tác đã được thêm vào túi mua sắm thành công.");
+      setTimeout(() => {
+        setStatus("idle");
+        setMessage("");
+      }, 3500);
     } catch (error) {
       setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Unable to add item.");
+      setMessage(error instanceof Error ? error.message : "Không thể thêm sản phẩm vào túi.");
     }
   }
 
@@ -84,10 +88,17 @@ export function ProductVariantSelector({ variants }: ProductVariantSelectorProps
       </fieldset>
 
       <button className="button button-primary add-cart-button" type="button" disabled={!canAdd} onClick={handleAddToCart}>
-        {status === "loading" ? "Adding..." : "Add to cart"}
+        {status === "loading" ? "Đang thêm..." : status === "success" ? "✓ Đã thêm vào túi" : "Thêm vào túi mua sắm"}
       </button>
 
-      {message ? <p className={status === "error" ? "form-message error" : "form-message"}>{message}</p> : null}
+      {message ? (
+        <p
+          className={status === "error" ? "form-message error" : "form-message"}
+          style={status === "success" ? { color: "#85611f", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" } : undefined}
+        >
+          {message}
+        </p>
+      ) : null}
     </div>
   );
 }

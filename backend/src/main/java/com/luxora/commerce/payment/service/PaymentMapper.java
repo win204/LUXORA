@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 class PaymentMapper {
 
     PaymentResponse toResponse(Payment payment) {
+        return toResponse(payment, null);
+    }
+
+    PaymentResponse toResponse(Payment payment, String paymentUrl) {
         return new PaymentResponse(
                 payment.getId(),
                 payment.getOrder().getId(),
@@ -16,6 +20,7 @@ class PaymentMapper {
                 payment.getAmount(),
                 payment.getCurrency(),
                 payment.getStatus().name(),
+                paymentUrl,
                 payment.getCreatedAt(),
                 payment.getUpdatedAt());
     }

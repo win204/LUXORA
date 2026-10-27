@@ -56,4 +56,10 @@ public class ProductImage {
     public int getDisplayOrder() {
         return displayOrder;
     }
+
+    public void update(String url, String altText, int displayOrder) {
+        this.url = url;
+        this.altText = altText;
+        this.displayOrder = displayOrder;
+    }
 }

@@ -88,6 +88,16 @@ public class Product {
         return images.removeIf(image -> image.getId().equals(imageId));
     }
 
+    public boolean updateImage(UUID imageId, String url, String altText, int displayOrder) {
+        for (ProductImage image : images) {
+            if (image.getId().equals(imageId)) {
+                image.update(url, altText, displayOrder);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void addSpecification(String name, String value, int displayOrder) {
         specifications.add(new ProductSpecification(this, name, value, displayOrder));
     }

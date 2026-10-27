@@ -48,7 +48,6 @@ public class CartService {
         return buildCart(identity.responseCartId(), quantities);
     }
 
-
     public Map<UUID, Integer> getAuthenticatedCartQuantities(UUID userId) {
         return cartStore.getQuantities(userCart(userId).storeKey());
     }
@@ -56,6 +55,20 @@ public class CartService {
     public void clearAuthenticatedCart(UUID userId) {
         cartStore.clear(userCart(userId).storeKey());
     }
+
+    public Map<UUID, Integer> getAnonymousCartQuantities(String cartId) {
+        if (!StringUtils.hasText(cartId)) {
+            throw new BadRequestException("CART_ID_REQUIRED", "cartId is required");
+        }
+        return cartStore.getQuantities(anonymousCart(cartId).storeKey());
+    }
+
+    public void clearAnonymousCart(String cartId) {
+        if (StringUtils.hasText(cartId)) {
+            cartStore.clear(anonymousCart(cartId).storeKey());
+        }
+    }
+
     @Transactional(readOnly = true)
     public CartResponse addItem(AuthenticatedUser user, String cartId, UUID variantId, int quantity) {
         validateQuantity(quantity);
@@ -221,4 +234,3 @@ public class CartService {
     private record CartIdentity(String storeKey, String responseCartId) {
     }
 }
-

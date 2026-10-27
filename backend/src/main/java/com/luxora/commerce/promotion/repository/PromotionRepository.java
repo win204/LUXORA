@@ -8,4 +8,6 @@ public interface PromotionRepository extends JpaRepository<Promotion,UUID>{
  Optional<Promotion> findByCode(String code);
  @Lock(LockModeType.PESSIMISTIC_WRITE) @Query("select p from Promotion p where p.code=:code") Optional<Promotion> findByCodeForUpdate(@Param("code") String code);
  @Query("select p from Promotion p where (:active is null or p.active=:active) and (:search is null or lower(p.code) like lower(concat('%',:search,'%')) or lower(p.name) like lower(concat('%',:search,'%')))") Page<Promotion> findAdminPage(@Param("active") Boolean active,@Param("search") String search,Pageable pageable);
+ @Query("select p from Promotion p where p.active = true and p.startsAt <= :now and p.endsAt > :now and (p.usageLimit is null or p.usageCount < p.usageLimit) order by p.value desc")
+ java.util.List<Promotion> findAvailablePromotions(@Param("now") java.time.Instant now);
 }

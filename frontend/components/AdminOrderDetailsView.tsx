@@ -83,6 +83,27 @@ export function AdminOrderDetailsView({ orderId }: { orderId: string }) {
     }
   }
 
+
+  async function createCarrierShipment(provider: "GHN" | "MOCK") {
+    if (!order) return;
+    const confirmed = window.confirm(`Create automated ${provider} shipping order for #${order.id.slice(0, 8)}?`);
+    if (!confirmed) return;
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const nextOrder = await createAdminShipment(order.id, { provider });
+      setOrder(nextOrder);
+      setCarrier(nextOrder.shipment?.carrier ?? "");
+      setTrackingNumber(nextOrder.shipment?.trackingNumber ?? "");
+      setSuccess(`Order marked as shipped via ${provider} (Tracking: ${nextOrder.shipment?.trackingNumber}).`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : `Unable to create ${provider} shipment.`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveShipment(mode: "create" | "update") {
     if (!order) return;
     if (!carrier.trim() || !trackingNumber.trim()) {
@@ -204,17 +225,26 @@ export function AdminOrderDetailsView({ orderId }: { orderId: string }) {
               {order.shipment ? (
                 <div className="admin-detail-grid">
                   <div><span>Carrier</span><strong>{order.shipment.carrier}</strong></div>
-                  <div><span>Tracking</span><strong>{order.shipment.trackingNumber}</strong></div>
+                  <div><span>Tracking</span><strong>{order.shipment.trackingUrl ? <a href={order.shipment.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline", color: "var(--accent, #6366f1)" }}>{order.shipment.trackingNumber} ↗</a> : order.shipment.trackingNumber}</strong></div>
                   <div><span>Shipped</span><strong>{new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.shipment.shippedAt))}</strong></div>
                   <div><span>Delivered</span><strong>{order.shipment.deliveredAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.shipment.deliveredAt)) : "Pending"}</strong></div>
                 </div>
               ) : <p className="muted-copy">Shipment metadata has not been added yet.</p>}
               {(order.status === "PROCESSING" || order.status === "SHIPPED") ? (
-                <div className="admin-inline-form">
-                  <label>Carrier<input value={carrier} onChange={(event) => setCarrier(event.target.value)} /></label>
-                  <label>Tracking number<input value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} /></label>
-                  <Button type="button" disabled={busy} onClick={() => saveShipment(order.status === "PROCESSING" ? "create" : "update")}>{saving ? "Saving..." : order.status === "PROCESSING" ? "Mark as Shipped" : "Update Tracking"}</Button>
-                </div>
+                <>
+                  {order.status === "PROCESSING" ? (
+                    <div style={{ marginBottom: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                      <Button type="button" disabled={busy} onClick={() => createCarrierShipment("GHN")}>
+                        {saving ? "Creating..." : "Tạo vận đơn GHN (Sandbox)"}
+                      </Button>
+                    </div>
+                  ) : null}
+                  <div className="admin-inline-form">
+                    <label>Carrier<input value={carrier} onChange={(event) => setCarrier(event.target.value)} /></label>
+                    <label>Tracking number<input value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} /></label>
+                    <Button type="button" disabled={busy} onClick={() => saveShipment(order.status === "PROCESSING" ? "create" : "update")}>{saving ? "Saving..." : order.status === "PROCESSING" ? "Mark as Shipped" : "Update Tracking"}</Button>
+                  </div>
+                </>
               ) : null}
             </section>
           ) : null}

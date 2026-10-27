@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="010-01-create-return-shipments" author="luxora">
+        <createTable tableName="return_shipments">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="return_id" type="UUID">
+                <constraints nullable="false" unique="true" foreignKeyName="fk_return_shipments_return" references="returns(id)"/>
+            </column>
+            <column name="carrier" type="VARCHAR(80)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tracking_number" type="VARCHAR(120)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="mock_label_reference" type="VARCHAR(180)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="shipped_at" type="datetimeoffset(7)"/>
+            <column name="received_at" type="datetimeoffset(7)"/>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="return_shipments" indexName="idx_return_shipments_return">
+            <column name="return_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

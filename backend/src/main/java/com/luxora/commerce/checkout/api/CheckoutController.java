@@ -4,6 +4,7 @@ import com.luxora.commerce.auth.security.AuthenticatedUser;
 import com.luxora.commerce.checkout.dto.CheckoutPreviewRequest;
 import com.luxora.commerce.checkout.dto.CheckoutPreviewResponse;
 import com.luxora.commerce.checkout.service.CheckoutPreviewService;
+import com.luxora.commerce.common.exception.UnauthorizedException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,7 +32,11 @@ public class CheckoutController {
     @SecurityRequirement(name = "bearerAuth")
     CheckoutPreviewResponse preview(
             @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestHeader(name = "X-Cart-Id", required = false) String cartId,
             @Valid @RequestBody CheckoutPreviewRequest request) {
-        return checkoutPreviewService.preview(user, request);
+        if (user == null && (cartId == null || cartId.isBlank())) {
+            throw new UnauthorizedException("UNAUTHORIZED", "Authentication or X-Cart-Id header is required");
+        }
+        return checkoutPreviewService.preview(user, cartId, request);
     }
 }

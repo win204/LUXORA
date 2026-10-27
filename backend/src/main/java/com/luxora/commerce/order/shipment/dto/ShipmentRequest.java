@@ -1,12 +1,19 @@
 package com.luxora.commerce.order.shipment.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record ShipmentRequest(
-        @NotBlank @Size(max = 120)
+        @Size(max = 120)
         String carrier,
 
-        @NotBlank @Size(max = 120)
-        String trackingNumber) {
+        @Size(max = 120)
+        String trackingNumber,
+
+        @Size(max = 50)
+        String provider) {
+
+    public ShipmentRequest(String carrier, String trackingNumber) {
+        this(carrier, trackingNumber, null);
+    }
 }
+

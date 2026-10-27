@@ -175,7 +175,8 @@ class CatalogControllerTests {
                 brandResponse(),
                 categoryResponse(),
                 new BigDecimal("799.00"),
-                true);
+                true,
+                "https://images.unsplash.com/photo-1598327105666-5b89351aff97");
     }
 
     private ProductDetailResponse productDetailResponse() {

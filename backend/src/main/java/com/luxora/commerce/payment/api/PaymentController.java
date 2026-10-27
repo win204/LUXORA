@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,19 +34,29 @@ public class PaymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create payment attempt", description = "Creates a local mock payment attempt for the authenticated owner's order using the persisted order total.")
+    @Operation(summary = "Create payment attempt", description = "Creates a local mock payment attempt using the persisted order total.")
     @SecurityRequirement(name = "bearerAuth")
     PaymentResponse createPayment(
             @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestHeader(name = "X-Guest-Access-Token", required = false) String guestTokenHeader,
+            @RequestParam(name = "token", required = false) String guestTokenParam,
             @PathVariable UUID orderId,
-            @Valid @RequestBody(required = false) CreatePaymentRequest request) {
-        return paymentService.createPayment(user, orderId, request);
+            @Valid @RequestBody(required = false) CreatePaymentRequest request,
+            jakarta.servlet.http.HttpServletRequest servletRequest) {
+        String guestToken = guestTokenHeader != null ? guestTokenHeader : guestTokenParam;
+        String clientIp = servletRequest != null ? servletRequest.getRemoteAddr() : "127.0.0.1";
+        return paymentService.createPayment(user, guestToken, orderId, request, clientIp);
     }
 
     @GetMapping("/latest")
-    @Operation(summary = "Get latest payment", description = "Returns the latest payment attempt for the authenticated owner's order.")
+    @Operation(summary = "Get latest payment", description = "Returns the latest payment attempt for the order.")
     @SecurityRequirement(name = "bearerAuth")
-    PaymentResponse latestPayment(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID orderId) {
-        return paymentService.latestPayment(user, orderId);
+    PaymentResponse latestPayment(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestHeader(name = "X-Guest-Access-Token", required = false) String guestTokenHeader,
+            @RequestParam(name = "token", required = false) String guestTokenParam,
+            @PathVariable UUID orderId) {
+        String guestToken = guestTokenHeader != null ? guestTokenHeader : guestTokenParam;
+        return paymentService.latestPayment(user, guestToken, orderId);
     }
 }

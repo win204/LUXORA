@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="016-01-create-flash-sales-table" author="luxora">
+        <createTable tableName="flash_sales">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="start_time" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="end_time" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(30)" defaultValue="UPCOMING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="banner_image_url" type="VARCHAR(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="flash_sales" indexName="idx_flash_sales_status_time">
+            <column name="status"/>
+            <column name="start_time"/>
+            <column name="end_time"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="016-02-create-flash-sale-items-table" author="luxora">
+        <createTable tableName="flash_sale_items">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="flash_sale_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_flash_item_sale" references="flash_sales(id)" deleteCascade="true"/>
+            </column>
+            <column name="product_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_flash_item_product" references="products(id)"/>
+            </column>
+            <column name="variant_id" type="UUID">
+                <constraints nullable="true" foreignKeyName="fk_flash_item_variant" references="product_variants(id)"/>
+            </column>
+            <column name="flash_sale_price" type="DECIMAL(12, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sold_quantity" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="flash_sale_items" indexName="idx_flash_sale_items_sale">
+            <column name="flash_sale_id"/>
+        </createIndex>
+
+        <createIndex tableName="flash_sale_items" indexName="idx_flash_sale_items_product">
+            <column name="product_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

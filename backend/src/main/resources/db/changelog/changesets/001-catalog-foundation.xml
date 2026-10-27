@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-01-create-brands" author="luxora">
+        <createTable tableName="brands">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(120)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="slug" type="VARCHAR(140)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="001-02-create-categories" author="luxora">
+        <createTable tableName="categories">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(120)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="slug" type="VARCHAR(140)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="001-03-create-products" author="luxora">
+        <createTable tableName="products">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(180)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="slug" type="VARCHAR(220)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="subtitle" type="VARCHAR(240)"/>
+            <column name="description" type="VARCHAR(4000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="brand_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_products_brand" references="brands(id)"/>
+            </column>
+            <column name="category_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_products_category" references="categories(id)"/>
+            </column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="products" indexName="idx_products_active_slug">
+            <column name="active"/>
+            <column name="slug"/>
+        </createIndex>
+        <createIndex tableName="products" indexName="idx_products_brand">
+            <column name="brand_id"/>
+        </createIndex>
+        <createIndex tableName="products" indexName="idx_products_category">
+            <column name="category_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="001-04-create-product-images" author="luxora">
+        <createTable tableName="product_images">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="product_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_product_images_product" references="products(id)" deleteCascade="true"/>
+            </column>
+            <column name="url" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="alt_text" type="VARCHAR(180)"/>
+            <column name="display_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="001-05-create-product-specifications" author="luxora">
+        <createTable tableName="product_specifications">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="product_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_product_specifications_product" references="products(id)" deleteCascade="true"/>
+            </column>
+            <column name="name" type="VARCHAR(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="spec_value" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="display_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="001-06-create-product-variants" author="luxora">
+        <createTable tableName="product_variants">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="product_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_product_variants_product" references="products(id)" deleteCascade="true"/>
+            </column>
+            <column name="sku" type="VARCHAR(80)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="color" type="VARCHAR(80)"/>
+            <column name="storage" type="VARCHAR(80)"/>
+            <column name="price" type="DECIMAL(12, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="001-07-create-inventory-items" author="luxora">
+        <createTable tableName="inventory_items">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="variant_id" type="UUID">
+                <constraints nullable="false" unique="true" foreignKeyName="fk_inventory_items_variant" references="product_variants(id)" deleteCascade="true"/>
+            </column>
+            <column name="quantity_available" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

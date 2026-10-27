@@ -539,6 +539,135 @@ class OrderApiIntegrationTests {
     }
 
 
+    @Test
+    void guestOrderCreationAndLifecycleSucceeds() throws Exception {
+        ProductVariant variant = variant("AUR-X1-GRF-128");
+        String cartId = UUID.randomUUID().toString();
+        int stockBefore = stock(variant.getId());
+        when(cartStore.getQuantities("anon:" + cartId)).thenReturn(Map.of(variant.getId(), 2));
+
+        Map<String, Object> guestAddress = new LinkedHashMap<>();
+        guestAddress.put("email", "Guest.Customer@Example.com");
+        guestAddress.put("recipientName", "Guest User");
+        guestAddress.put("phone", "+84901234567");
+        guestAddress.put("addressLine1", "123 Le Loi");
+        guestAddress.put("city", "Ho Chi Minh City");
+        guestAddress.put("province", "Ho Chi Minh");
+        guestAddress.put("country", "Vietnam");
+
+        var createResult = mockMvc.perform(post("/api/v1/orders")
+                        .header("X-Cart-Id", cartId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(guestAddress)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.customerEmail").value("guest.customer@example.com"))
+                .andExpect(jsonPath("$.guestAccessToken").isNotEmpty())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].quantity").value(2))
+                .andReturn();
+
+        JsonNode createdOrder = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        String orderId = createdOrder.get("id").asText();
+        String guestToken = createdOrder.get("guestAccessToken").asText();
+
+        assertThat(stock(variant.getId())).isEqualTo(stockBefore - 2);
+        verify(cartStore).clear("anon:" + cartId);
+
+        mockMvc.perform(get("/api/v1/orders/{id}", orderId))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/orders/{id}", orderId)
+                        .header("X-Guest-Access-Token", "wrong-token"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/v1/orders/{id}", orderId)
+                        .header("X-Guest-Access-Token", guestToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(orderId))
+                .andExpect(jsonPath("$.customerEmail").value("guest.customer@example.com"));
+
+        mockMvc.perform(get("/api/v1/orders/{id}?token={token}", orderId, guestToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(orderId));
+
+        AuthTokens otherUser = registerUser("other-user-attempt@example.com");
+        mockMvc.perform(get("/api/v1/orders/{id}", orderId)
+                        .header("Authorization", "Bearer " + otherUser.accessToken()))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/api/v1/orders/{id}/payments", orderId)
+                        .header("X-Guest-Access-Token", guestToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("mockOutcome", "SUCCEEDED"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("SUCCEEDED"));
+
+        assertThat(orderStatus(orderId)).isEqualTo("PAID");
+
+        mockMvc.perform(get("/api/v1/orders/{id}/payments/latest", orderId)
+                        .header("X-Guest-Access-Token", guestToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCEEDED"));
+    }
+
+    @Test
+    void guestOrderRequiresEmailAndCartId() throws Exception {
+        ProductVariant variant = variant("AUR-X1-GRF-128");
+        String cartId = UUID.randomUUID().toString();
+        when(cartStore.getQuantities("anon:" + cartId)).thenReturn(Map.of(variant.getId(), 1));
+
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("X-Cart-Id", cartId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validAddress()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("EMAIL_REQUIRED"));
+
+        mockMvc.perform(post("/api/v1/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validAddress()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    void guestCanCancelPendingOrderAndRestoreInventory() throws Exception {
+        ProductVariant variant = variant("AUR-X1-GRF-128");
+        String cartId = UUID.randomUUID().toString();
+        int stockBefore = stock(variant.getId());
+        when(cartStore.getQuantities("anon:" + cartId)).thenReturn(Map.of(variant.getId(), 1));
+
+        Map<String, Object> guestAddress = new LinkedHashMap<>();
+        guestAddress.put("email", "cancel-guest@example.com");
+        guestAddress.put("recipientName", "Guest Cancel");
+        guestAddress.put("phone", "+84901234567");
+        guestAddress.put("addressLine1", "123 Le Loi");
+        guestAddress.put("city", "Ho Chi Minh City");
+        guestAddress.put("province", "Ho Chi Minh");
+        guestAddress.put("country", "Vietnam");
+
+        var createResult = mockMvc.perform(post("/api/v1/orders")
+                        .header("X-Cart-Id", cartId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(guestAddress)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        JsonNode createdOrder = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        String orderId = createdOrder.get("id").asText();
+        String guestToken = createdOrder.get("guestAccessToken").asText();
+        assertThat(stock(variant.getId())).isEqualTo(stockBefore - 1);
+
+        mockMvc.perform(post("/api/v1/orders/{id}/cancel", orderId)
+                        .header("X-Guest-Access-Token", guestToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        assertThat(orderStatus(orderId)).isEqualTo("CANCELLED");
+        assertThat(stock(variant.getId())).isEqualTo(stockBefore);
+    }
+
     private String createOrder(AuthTokens tokens, Map<UUID, Integer> quantities) throws Exception {
         when(cartStore.getQuantities(userKey(tokens))).thenReturn(quantities);
         var created = mockMvc.perform(post("/api/v1/orders")

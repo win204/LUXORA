@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, LinkButton } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { useAuth } from "@/components/AuthProvider";
+import { LoyaltyRewardsSection } from "@/components/LoyaltyRewardsSection";
 
 export function AccountDashboard() {
   const router = useRouter();
@@ -61,6 +62,8 @@ export function AccountDashboard() {
             </div>
           </dl>
         </div>
+
+        <LoyaltyRewardsSection />
 
         <div className="account-panel account-links-panel">
           <div>

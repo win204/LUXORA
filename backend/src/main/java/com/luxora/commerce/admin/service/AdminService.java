@@ -234,6 +234,16 @@ public class AdminService {
     }
 
     @Transactional
+    public AdminProductDetailResponse updateImage(UUID productId, UUID imageId, AdminProductImageRequest request) {
+        Product product = findProduct(productId);
+        if (!product.updateImage(imageId, trim(request.url()), trimToNull(request.altText()), request.displayOrder())) {
+            throw new NotFoundException("PRODUCT_IMAGE_NOT_FOUND", "Product image not found");
+        }
+        productRepository.saveAndFlush(product);
+        return toProductDetailResponse(product);
+    }
+
+    @Transactional
     public AdminProductDetailResponse addSpecification(UUID productId, AdminProductSpecificationRequest request) {
         Product product = findProduct(productId);
         product.addSpecification(trim(request.name()), trim(request.value()), request.displayOrder());
@@ -470,8 +480,8 @@ public class AdminService {
     private AdminOrderListResponse toOrderListResponse(Order order) {
         return new AdminOrderListResponse(
                 order.getId(),
-                order.getUser().getId(),
-                order.getUser().getEmail(),
+                (order.getUser() == null ? null : order.getUser().getId()),
+                order.getCustomerEmail(),
                 order.getStatus().name(),
                 order.getGrandTotal(),
                 order.getCurrency(),
@@ -484,8 +494,8 @@ public class AdminService {
     private AdminOrderDetailResponse toOrderDetailResponse(Order order) {
         return new AdminOrderDetailResponse(
                 order.getId(),
-                order.getUser().getId(),
-                order.getUser().getEmail(),
+                (order.getUser() == null ? null : order.getUser().getId()),
+                order.getCustomerEmail(),
                 order.getStatus().name(),
                 order.getAdminNote(),
                 order.getItems().stream().map(this::toOrderItemResponse).toList(),

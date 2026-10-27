@@ -6,6 +6,7 @@ import type {
   ProductListItem,
   ProductQuery
 } from "./types";
+import { DEFAULT_PRODUCT_IMAGES } from "./fallbackProducts";
 
 const apiBaseUrl =
   process.env.API_BASE_URL ??
@@ -56,8 +57,15 @@ function queryString(query: ProductQuery): string {
   return value ? `?${value}` : "";
 }
 
-export function getProducts(query: ProductQuery = {}) {
-  return getJson<PageResponse<ProductListItem>>(`/api/v1/products${queryString(query)}`);
+export async function getProducts(query: ProductQuery = {}) {
+  const page = await getJson<PageResponse<ProductListItem>>(`/api/v1/products${queryString(query)}`);
+  return {
+    ...page,
+    content: page.content.map((p) => ({
+      ...p,
+      imageUrl: p.imageUrl ?? DEFAULT_PRODUCT_IMAGES[p.slug] ?? null
+    }))
+  };
 }
 
 export function getProduct(slug: string) {

@@ -95,6 +95,38 @@ class CheckoutPreviewApiIntegrationTests {
     }
 
     @Test
+    void guestPreviewWithCartIdSucceeds() throws Exception {
+        ProductVariant variant = variant("AUR-X1-GRF-128");
+        String cartId = UUID.randomUUID().toString();
+        when(cartStore.getQuantities("anon:" + cartId)).thenReturn(Map.of(variant.getId(), 3));
+
+        mockMvc.perform(post("/api/v1/checkout/preview")
+                        .header("X-Cart-Id", cartId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validAddress()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].variantId").value(variant.getId().toString()))
+                .andExpect(jsonPath("$.items[0].quantity").value(3))
+                .andExpect(jsonPath("$.shippingAddress.city").value("Ho Chi Minh City"))
+                .andExpect(jsonPath("$.currency").value("USD"))
+                .andExpect(jsonPath("$.grandTotal").value(variant.getPrice().multiply(BigDecimal.valueOf(3)).doubleValue()));
+    }
+
+    @Test
+    void guestPreviewWithEmptyCartFails() throws Exception {
+        String cartId = UUID.randomUUID().toString();
+        when(cartStore.getQuantities("anon:" + cartId)).thenReturn(Map.of());
+
+        mockMvc.perform(post("/api/v1/checkout/preview")
+                        .header("X-Cart-Id", cartId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validAddress()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("EMPTY_CART"));
+    }
+
+    @Test
     void emptyCartRejected() throws Exception {
         AuthTokens tokens = registerUser("checkout-empty@example.com");
         when(cartStore.getQuantities(startsWith("user:"))).thenReturn(Map.of());

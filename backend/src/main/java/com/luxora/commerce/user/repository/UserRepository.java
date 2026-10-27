@@ -1,6 +1,7 @@
 package com.luxora.commerce.user.repository;
 
 import com.luxora.commerce.user.model.User;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -12,4 +13,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    long countByCreatedAtAfter(Instant since);
 }

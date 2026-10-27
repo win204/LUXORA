@@ -16,6 +16,7 @@ import {
   removeAdminProductSpecification,
   updateAdminInventory,
   updateAdminProduct,
+  updateAdminProductImage,
   updateAdminVariant
 } from "@/lib/adminClient";
 import { getBrands, getCategories } from "@/lib/api";
@@ -59,6 +60,8 @@ export function AdminProductForm({ productId }: { productId?: string }) {
   const [form, setForm] = useState<AdminProductPayload>(emptyProductForm);
   const [variantForm, setVariantForm] = useState(emptyVariantForm);
   const [imageForm, setImageForm] = useState(emptyImageForm);
+  const [editingImageId, setEditingImageId] = useState<string | null>(null);
+  const [editingImageForm, setEditingImageForm] = useState(emptyImageForm);
   const [specForm, setSpecForm] = useState(emptySpecForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -172,8 +175,20 @@ export function AdminProductForm({ productId }: { productId?: string }) {
       setError("Image URL is required.");
       return;
     }
-    await mutateProduct(() => addAdminProductImage(product.id, imageForm), "Image added.");
+    await mutateProduct(() => addAdminProductImage(product.id, imageForm), "Đã thêm ảnh sản phẩm thành công.");
     setImageForm(emptyImageForm);
+  }
+
+  async function saveImage(imageId: string) {
+    if (!product || !editingImageForm.url.trim()) {
+      setError("Image URL is required.");
+      return;
+    }
+    await mutateProduct(
+      () => updateAdminProductImage(product.id, imageId, editingImageForm),
+      "Đã cập nhật ảnh sản phẩm! Phía khách hàng đã được đồng bộ tức thời."
+    );
+    setEditingImageId(null);
   }
 
   async function addSpecification() {
@@ -248,15 +263,132 @@ export function AdminProductForm({ productId }: { productId?: string }) {
               </section>
 
               <section className="admin-panel">
-                <h2>Images</h2>
-                <div className="admin-collection compact">
-                  {product.images.map((image) => <div className="admin-list-item" key={image.id}><span><strong>{image.url}</strong><small>{image.altText ?? "No alt text"}</small></span><Button type="button" variant="secondary" disabled={saving} onClick={() => mutateProduct(() => removeAdminProductImage(product.id, image.id), "Image removed.")}>Remove</Button></div>)}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <div>
+                    <h2 style={{ margin: 0 }}>Quản lý hình ảnh sản phẩm</h2>
+                    <p style={{ margin: "4px 0 0", color: "var(--muted)", fontSize: "0.85rem" }}>
+                      Chỉ Quản trị viên (Admin) có quyền thêm, sửa và xóa ảnh. Mọi cập nhật sẽ đồng bộ ngay lập tức cho khách hàng.
+                    </p>
+                  </div>
+                  <span style={{ fontSize: "0.78rem", padding: "4px 10px", borderRadius: "999px", background: "rgba(179, 138, 56, 0.12)", color: "var(--gold)", border: "1px solid rgba(179, 138, 56, 0.3)" }}>
+                    Admin Privileges Only
+                  </span>
                 </div>
-                <div className="admin-inline-form">
-                  <Field label="Image URL" value={imageForm.url} onChange={(value) => setImageForm({ ...imageForm, url: value })} />
-                  <Field label="Alt text" value={imageForm.altText} onChange={(value) => setImageForm({ ...imageForm, altText: value })} />
-                  <Field label="Order" value={String(imageForm.displayOrder)} type="number" onChange={(value) => setImageForm({ ...imageForm, displayOrder: Number(value) })} />
-                  <Button type="button" onClick={addImage} disabled={saving}>Add image</Button>
+
+                {product.images.length === 0 ? (
+                  <p style={{ color: "var(--muted)", fontStyle: "italic", margin: "16px 0" }}>Chưa có hình ảnh nào. Thêm ảnh bên dưới để hiển thị trên cửa hàng.</p>
+                ) : (
+                  <div className="admin-collection compact" style={{ display: "grid", gap: "12px", marginBottom: "20px" }}>
+                    {product.images.map((image) => (
+                      <div
+                        className="admin-list-item"
+                        key={image.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "12px 16px",
+                          borderRadius: "var(--radius)",
+                          border: "1px solid var(--line)",
+                          background: "var(--surface)",
+                          gap: "16px"
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: 0 }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={image.url}
+                            alt={image.altText ?? "Product image"}
+                            style={{
+                              width: "64px",
+                              height: "64px",
+                              objectFit: "cover",
+                              borderRadius: "8px",
+                              border: "1px solid var(--line-strong)",
+                              flexShrink: 0
+                            }}
+                          />
+                          {editingImageId === image.id ? (
+                            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 80px", gap: "8px", width: "100%" }}>
+                              <input
+                                placeholder="URL ảnh"
+                                value={editingImageForm.url}
+                                onChange={(e) => setEditingImageForm({ ...editingImageForm, url: e.target.value })}
+                                style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--line-strong)" }}
+                              />
+                              <input
+                                placeholder="Alt text"
+                                value={editingImageForm.altText ?? ""}
+                                onChange={(e) => setEditingImageForm({ ...editingImageForm, altText: e.target.value })}
+                                style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--line-strong)" }}
+                              />
+                              <input
+                                type="number"
+                                placeholder="Order"
+                                value={editingImageForm.displayOrder}
+                                onChange={(e) => setEditingImageForm({ ...editingImageForm, displayOrder: Number(e.target.value) })}
+                                style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--line-strong)" }}
+                              />
+                            </div>
+                          ) : (
+                            <div style={{ minWidth: 0 }}>
+                              <strong style={{ display: "block", fontSize: "0.88rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {image.url}
+                              </strong>
+                              <small style={{ color: "var(--muted)", fontSize: "0.78rem" }}>
+                                {image.altText ? `Alt: ${image.altText}` : "Không có alt text"} · Thứ tự: {image.displayOrder}
+                              </small>
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                          {editingImageId === image.id ? (
+                            <>
+                              <Button type="button" disabled={saving} onClick={() => saveImage(image.id)}>
+                                Lưu
+                              </Button>
+                              <Button type="button" variant="secondary" disabled={saving} onClick={() => setEditingImageId(null)}>
+                                Hủy
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                disabled={saving}
+                                onClick={() => {
+                                  setEditingImageId(image.id);
+                                  setEditingImageForm({ url: image.url, altText: image.altText ?? "", displayOrder: image.displayOrder });
+                                }}
+                              >
+                                Sửa
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                disabled={saving}
+                                onClick={() => mutateProduct(() => removeAdminProductImage(product.id, image.id), "Đã xóa ảnh sản phẩm thành công.")}
+                              >
+                                Xóa
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ marginTop: "16px", padding: "16px", borderRadius: "var(--radius)", background: "rgba(35, 28, 20, 0.02)", border: "1px dashed var(--line-strong)" }}>
+                  <h3 style={{ fontSize: "0.95rem", marginBottom: "12px", color: "var(--foreground)" }}>Thêm ảnh mới cho sản phẩm</h3>
+                  <div className="admin-inline-form">
+                    <Field label="Image URL" value={imageForm.url} onChange={(value) => setImageForm({ ...imageForm, url: value })} />
+                    <Field label="Alt text" value={imageForm.altText} onChange={(value) => setImageForm({ ...imageForm, altText: value })} />
+                    <Field label="Order" value={String(imageForm.displayOrder)} type="number" onChange={(value) => setImageForm({ ...imageForm, displayOrder: Number(value) })} />
+                    <Button type="button" onClick={addImage} disabled={saving}>Thêm ảnh</Button>
+                  </div>
                 </div>
               </section>
 

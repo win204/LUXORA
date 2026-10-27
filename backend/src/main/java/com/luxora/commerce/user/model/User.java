@@ -107,6 +107,13 @@ public class User {
         return lastName;
     }
 
+    public String getFullName() {
+        String first = firstName != null ? firstName.trim() : "";
+        String last = lastName != null ? lastName.trim() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? "Valued Client" : full;
+    }
+
     public boolean isEnabled() {
         return enabled;
     }

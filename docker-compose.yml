@@ -71,6 +71,11 @@ services:
       REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-false}
       REFRESH_COOKIE_SAME_SITE: ${REFRESH_COOKIE_SAME_SITE:-Lax}
       REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/api/v1/auth}
+      AWS_ENDPOINT: ${AWS_ENDPOINT:-http://localstack:4566}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-mock-access-key}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-mock-secret-key}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-luxora-media}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
@@ -90,6 +95,17 @@ services:
     depends_on:
       - backend
 
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,ses,sqs,sns
+      - DEFAULT_REGION=ap-southeast-1
+    volumes:
+      - localstack-data:/var/lib/localstack
+
 volumes:
   sqlserver-data:
   redis-data:
+  localstack-data:

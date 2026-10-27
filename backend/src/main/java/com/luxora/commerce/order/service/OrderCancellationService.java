@@ -5,7 +5,9 @@ import com.luxora.commerce.catalog.model.ProductVariant;
 import com.luxora.commerce.catalog.repository.ProductVariantRepository;
 import com.luxora.commerce.common.exception.ConflictException;
 import com.luxora.commerce.common.exception.NotFoundException;
+import com.luxora.commerce.common.exception.UnauthorizedException;
 import com.luxora.commerce.inventory.model.InventoryItem;
+import com.luxora.commerce.loyalty.service.LoyaltyService;
 import com.luxora.commerce.order.dto.OrderResponse;
 import com.luxora.commerce.order.model.Order;
 import com.luxora.commerce.order.model.OrderItem;
@@ -22,6 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class OrderCancellationService {
@@ -31,25 +34,46 @@ public class OrderCancellationService {
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final UserRepository userRepository;
     private final OrderMapper orderMapper;
+    private final LoyaltyService loyaltyService;
 
     public OrderCancellationService(
             OrderRepository orderRepository,
             ProductVariantRepository productVariantRepository,
             OrderStatusHistoryRepository orderStatusHistoryRepository,
             UserRepository userRepository,
-            OrderMapper orderMapper) {
+            OrderMapper orderMapper,
+            LoyaltyService loyaltyService) {
         this.orderRepository = orderRepository;
         this.productVariantRepository = productVariantRepository;
         this.orderStatusHistoryRepository = orderStatusHistoryRepository;
         this.userRepository = userRepository;
         this.orderMapper = orderMapper;
+        this.loyaltyService = loyaltyService;
+    }
+
+    @Transactional
+    public OrderResponse cancelCustomerOrder(AuthenticatedUser authenticatedUser, String guestToken, UUID orderId) {
+        if (authenticatedUser == null && !StringUtils.hasText(guestToken)) {
+            throw new UnauthorizedException("UNAUTHORIZED", "Authentication or guest token is required");
+        }
+        Order order = orderRepository.findWithItemsByIdForUpdate(orderId)
+                .orElseThrow(() -> new NotFoundException("ORDER_NOT_FOUND", "Order not found"));
+
+        if (order.isGuestOrder()) {
+            if (!StringUtils.hasText(guestToken) || !guestToken.equals(order.getGuestAccessToken())) {
+                throw new NotFoundException("ORDER_NOT_FOUND", "Order not found");
+            }
+        } else {
+            if (authenticatedUser == null || !order.getUser().getId().equals(authenticatedUser.id())) {
+                throw new NotFoundException("ORDER_NOT_FOUND", "Order not found");
+            }
+        }
+        return orderMapper.toResponse(cancelLockedOrder(order, authenticatedUser != null ? authenticatedUser.id() : null));
     }
 
     @Transactional
     public OrderResponse cancelCustomerOrder(AuthenticatedUser authenticatedUser, UUID orderId) {
-        Order order = orderRepository.findByIdAndUserIdForUpdate(orderId, authenticatedUser.id())
-                .orElseThrow(() -> new NotFoundException("ORDER_NOT_FOUND", "Order not found"));
-        return orderMapper.toResponse(cancelLockedOrder(order, authenticatedUser.id()));
+        return cancelCustomerOrder(authenticatedUser, null, orderId);
     }
 
     @Transactional
@@ -68,9 +92,10 @@ public class OrderCancellationService {
         }
 
         restock(order.getItems());
+        loyaltyService.restorePointsForOrder(order);
         OrderStatus fromStatus = order.getStatus();
         order.markCancelled();
-        User actor = userRepository.getReferenceById(actorUserId);
+        User actor = actorUserId != null ? userRepository.getReferenceById(actorUserId) : null;
         orderStatusHistoryRepository.save(new OrderStatusHistory(order, fromStatus, OrderStatus.CANCELLED, actor));
         return order;
     }

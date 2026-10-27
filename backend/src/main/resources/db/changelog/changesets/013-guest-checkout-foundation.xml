@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="013-01-add-orders-guest-checkout-columns" author="luxora">
+        <addColumn tableName="orders">
+            <column name="customer_email" type="VARCHAR(254)"/>
+            <column name="guest_access_token" type="VARCHAR(64)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="013-02-populate-customer-email" author="luxora">
+        <sql>
+            update orders
+            set customer_email = coalesce((select email from users where users.id = orders.user_id), 'legacy-order@example.com')
+            where customer_email is null;
+        </sql>
+        <addNotNullConstraint tableName="orders" columnName="customer_email" columnDataType="VARCHAR(254)"/>
+    </changeSet>
+
+    <changeSet id="013-03-guest-checkout-indexes-mssql" author="luxora" dbms="mssql">
+        <createIndex tableName="orders" indexName="idx_orders_customer_email">
+            <column name="customer_email"/>
+        </createIndex>
+        <sql>
+            create unique index idx_orders_guest_access_token on orders (guest_access_token) where guest_access_token is not null;
+        </sql>
+    </changeSet>
+
+    <changeSet id="013-03-guest-checkout-indexes-h2" author="luxora" dbms="!mssql">
+        <createIndex tableName="orders" indexName="idx_orders_customer_email">
+            <column name="customer_email"/>
+        </createIndex>
+        <createIndex tableName="orders" indexName="idx_orders_guest_access_token">
+            <column name="guest_access_token"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

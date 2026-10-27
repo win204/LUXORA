@@ -30,7 +30,7 @@ async function cartRequest(path: string, init: RequestInit = {}) {
   let accessToken = getAccessToken();
   let response = await sendCartRequest(path, init, accessToken);
 
-  if (response.status === 401 && accessToken) {
+  if (response.status === 401) {
     try {
       const refreshed = await refreshAndStoreSession();
       accessToken = refreshed.accessToken;

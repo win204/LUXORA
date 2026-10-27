@@ -8,8 +8,10 @@ import { ErrorState } from "@/components/ErrorState";
 import { Price } from "@/components/Price";
 import { ReturnRequestPanel } from "@/components/ReturnRequestPanel";
 import { useAuth } from "@/components/AuthProvider";
-import { cancelOrder, createMockPayment, getLatestPayment, getOrder, OrderClientError } from "@/lib/orderClient";
+import { cancelOrder, createMockPayment, createVnPayPayment, getLatestPayment, getOrder, getStoredGuestToken, OrderClientError } from "@/lib/orderClient";
 import type { MockPaymentOutcome, Order, Payment } from "@/lib/types";
+
+type PayingState = MockPaymentOutcome | "VNPAY" | null;
 
 export function OrderDetailsView({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -17,25 +19,40 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<Order | null>(null);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [orderLoading, setOrderLoading] = useState(true);
-  const [paying, setPaying] = useState<MockPaymentOutcome | null>(null);
+  const [paying, setPaying] = useState<PayingState>(null);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const [paymentMessage, setPaymentMessage] = useState("");
 
+  const hasGuestToken = Boolean(
+    getStoredGuestToken(orderId) ||
+    (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("token"))
+  );
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !hasGuestToken) {
       router.replace("/login");
     }
-  }, [loading, router, user]);
+  }, [hasGuestToken, loading, router, user]);
 
   const loadOrder = useCallback(async () => {
     setOrderLoading(true);
     setError("");
     try {
-      const loaded = await getOrder(orderId);
+      const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const token = searchParams?.get("token") ?? undefined;
+      const vnpResponseCode = searchParams?.get("vnp_ResponseCode");
+      if (vnpResponseCode) {
+        if (vnpResponseCode === "00") {
+          setPaymentMessage("Thanh toán VNPay thành công! Đơn hàng đã được xác nhận thanh toán.");
+        } else {
+          setError(`Thanh toán VNPay không thành công hoặc đã bị hủy (Mã lỗi: ${vnpResponseCode}).`);
+        }
+      }
+      const loaded = await getOrder(orderId, token);
       setOrder(loaded);
       try {
-        setPayment(await getLatestPayment(orderId));
+        setPayment(await getLatestPayment(orderId, token));
       } catch (caught) {
         if (caught instanceof OrderClientError && caught.status === 404) {
           setPayment(null);
@@ -44,7 +61,7 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
         }
       }
     } catch (caught) {
-      if (caught instanceof OrderClientError && caught.status === 401) {
+      if (caught instanceof OrderClientError && caught.status === 401 && user) {
         router.replace("/login");
         return;
       }
@@ -52,15 +69,18 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
     } finally {
       setOrderLoading(false);
     }
-  }, [orderId, router]);
+  }, [orderId, router, user]);
 
   useEffect(() => {
-    if (loading || !user) {
+    if (loading) {
+      return;
+    }
+    if (!user && !hasGuestToken) {
       return;
     }
 
     void Promise.resolve().then(loadOrder);
-  }, [loading, loadOrder, user]);
+  }, [hasGuestToken, loading, loadOrder, user]);
 
   async function handleCancel() {
     if (!order) return;
@@ -70,10 +90,11 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
     setError("");
     setPaymentMessage("");
     try {
-      setOrder(await cancelOrder(order.id));
+      const token = (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") : null) ?? undefined;
+      setOrder(await cancelOrder(order.id, token));
       setPaymentMessage("Order cancelled.");
     } catch (caught) {
-      if (caught instanceof OrderClientError && caught.status === 401) {
+      if (caught instanceof OrderClientError && caught.status === 401 && user) {
         router.replace("/login");
         return;
       }
@@ -82,18 +103,20 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
       setCancelling(false);
     }
   }
-  async function handlePayment(mockOutcome: MockPaymentOutcome) {
+
+  async function handleMockPayment(mockOutcome: MockPaymentOutcome) {
     setPaying(mockOutcome);
     setError("");
     setPaymentMessage("");
     try {
-      const nextPayment = await createMockPayment(orderId, mockOutcome);
+      const token = (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") : null) ?? undefined;
+      const nextPayment = await createMockPayment(orderId, mockOutcome, token);
       setPayment(nextPayment);
-      const updatedOrder = await getOrder(orderId);
+      const updatedOrder = await getOrder(orderId, token);
       setOrder(updatedOrder);
       setPaymentMessage(nextPayment.status === "SUCCEEDED" ? "Payment succeeded." : "Payment failed. You can try again.");
     } catch (caught) {
-      if (caught instanceof OrderClientError && caught.status === 401) {
+      if (caught instanceof OrderClientError && caught.status === 401 && user) {
         router.replace("/login");
         return;
       }
@@ -103,12 +126,35 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
     }
   }
 
+  async function handleVnPayPayment() {
+    setPaying("VNPAY");
+    setError("");
+    setPaymentMessage("");
+    try {
+      const token = (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") : null) ?? undefined;
+      const nextPayment = await createVnPayPayment(orderId, undefined, token);
+      setPayment(nextPayment);
+      if (nextPayment.paymentUrl) {
+        setPaymentMessage("Đang chuyển hướng sang cổng thanh toán VNPay Sandbox...");
+        window.location.href = nextPayment.paymentUrl;
+        return;
+      }
+    } catch (caught) {
+      if (caught instanceof OrderClientError && caught.status === 401 && user) {
+        router.replace("/login");
+        return;
+      }
+      setError(caught instanceof Error ? caught.message : "Không thể khởi tạo thanh toán VNPay.");
+      setPaying(null);
+    }
+  }
+
   if (loading || orderLoading) {
     return <div className="state-panel">Loading order...</div>;
   }
 
-  if (!user) {
-    return <EmptyState title="Login required" message="Sign in to view this order." />;
+  if (!user && !hasGuestToken) {
+    return <EmptyState title="Login required" message="Sign in or use your order access link to view this order." />;
   }
 
   if (error && !order) {
@@ -116,7 +162,7 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
   }
 
   if (!order) {
-    return <EmptyState title="Order not found" message="We could not find that order for your account." />;
+    return <EmptyState title="Order not found" message="We could not find that order." />;
   }
 
   return (
@@ -125,6 +171,7 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
         <p className="eyebrow">Order confirmed</p>
         <h1>Order {order.id.slice(0, 8)}</h1>
         <p>Status: <strong>{order.status}</strong></p>
+        {order.customerEmail ? <p className="meta-line">Customer: {order.customerEmail}</p> : null}
         <p>Created {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}</p>
       </div>
 
@@ -155,9 +202,49 @@ export function OrderDetailsView({ orderId }: { orderId: string }) {
           </section>
         ) : null}
 
-        <PaymentSection order={order} payment={payment} paying={paying} paymentMessage={paymentMessage} onPay={handlePayment} />
+        <PaymentSection
+          order={order}
+          payment={payment}
+          paying={paying}
+          paymentMessage={paymentMessage}
+          onPayMock={handleMockPayment}
+          onPayVnPay={handleVnPayPayment}
+        />
 
-        <ReturnRequestPanel order={order} />
+        {user ? <ReturnRequestPanel order={order} /> : null}
+        {order.shipment ? (
+          <section className="checkout-panel" aria-label="Shipment details" style={{ marginTop: "1rem" }}>
+            <p className="eyebrow">Vận chuyển</p>
+            <h2>Thông tin kiện hàng</h2>
+            <div style={{ marginTop: "0.75rem", display: "grid", gap: "0.5rem" }}>
+              <div><strong>Đơn vị vận chuyển:</strong> {order.shipment.carrier}</div>
+              <div>
+                <strong>Mã vận đơn:</strong>{" "}
+                {order.shipment.trackingUrl ? (
+                  <a
+                    href={order.shipment.trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "var(--accent, #6366f1)", textDecoration: "underline", fontWeight: 600 }}
+                  >
+                    {order.shipment.trackingNumber} ↗ (Tra cứu hành trình GHN)
+                  </a>
+                ) : (
+                  <span>{order.shipment.trackingNumber}</span>
+                )}
+              </div>
+              <div>
+                <strong>Ngày gửi:</strong> {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.shipment.shippedAt))}
+              </div>
+              {order.shipment.deliveredAt ? (
+                <div>
+                  <strong>Đã giao lúc:</strong> {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.shipment.deliveredAt))}
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
 
         <aside className="checkout-panel checkout-summary" aria-label="Order totals">
           <p className="eyebrow">Summary</p>
@@ -189,20 +276,22 @@ function PaymentSection({
   payment,
   paying,
   paymentMessage,
-  onPay
+  onPayMock,
+  onPayVnPay
 }: {
   order: Order;
   payment: Payment | null;
-  paying: MockPaymentOutcome | null;
+  paying: PayingState;
   paymentMessage: string;
-  onPay: (mockOutcome: MockPaymentOutcome) => void;
+  onPayMock: (mockOutcome: MockPaymentOutcome) => void;
+  onPayVnPay: () => void;
 }) {
   const paymentLocked = order.status !== "PENDING" || paying !== null;
 
   return (
     <section className="checkout-panel checkout-summary" aria-label="Payment">
       <p className="eyebrow">Payment</p>
-      <h2>{order.status === "PAID" ? "Paid" : "Mock provider"}</h2>
+      <h2>{order.status === "PAID" ? "Paid" : "Payment method"}</h2>
       {payment ? (
         <div className="payment-status">
           <div><span>Latest attempt</span><strong>{payment.status}</strong></div>
@@ -215,11 +304,14 @@ function PaymentSection({
       {paymentMessage ? <p className={payment?.status === "FAILED" ? "form-message error" : "form-message success"}>{paymentMessage}</p> : null}
       {order.status === "PENDING" ? (
         <div className="payment-actions">
-          <Button type="button" disabled={paymentLocked} onClick={() => onPay("SUCCEEDED")}>
-            {paying === "SUCCEEDED" ? "Processing" : "Pay with Mock Provider"}
+          <Button type="button" disabled={paymentLocked} onClick={onPayVnPay}>
+            {paying === "VNPAY" ? "Chuyển sang VNPay..." : "Thanh toán VNPay Sandbox"}
           </Button>
-          <Button type="button" variant="secondary" disabled={paymentLocked} onClick={() => onPay("FAILED")}>
-            {paying === "FAILED" ? "Processing" : "Simulate failure"}
+          <Button type="button" variant="secondary" disabled={paymentLocked} onClick={() => onPayMock("SUCCEEDED")}>
+            {paying === "SUCCEEDED" ? "Processing" : "Mock Provider (Success)"}
+          </Button>
+          <Button type="button" variant="secondary" disabled={paymentLocked} onClick={() => onPayMock("FAILED")}>
+            {paying === "FAILED" ? "Processing" : "Mock Provider (Fail)"}
           </Button>
         </div>
       ) : (
@@ -228,4 +320,3 @@ function PaymentSection({
     </section>
   );
 }
-

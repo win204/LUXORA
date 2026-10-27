@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-01-auth-timestamps-defaults" author="luxora" dbms="mssql">
+        <addDefaultValue tableName="users" columnName="created_at" defaultValueComputed="sysdatetimeoffset()"/>
+        <addDefaultValue tableName="users" columnName="updated_at" defaultValueComputed="sysdatetimeoffset()"/>
+        <addDefaultValue tableName="refresh_tokens" columnName="created_at" defaultValueComputed="sysdatetimeoffset()"/>
+    </changeSet>
+
+</databaseChangeLog>

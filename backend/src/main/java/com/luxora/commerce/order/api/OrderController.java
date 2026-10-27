@@ -3,6 +3,7 @@ package com.luxora.commerce.order.api;
 import com.luxora.commerce.auth.security.AuthenticatedUser;
 import com.luxora.commerce.catalog.dto.PageResponse;
 import com.luxora.commerce.checkout.dto.CheckoutPreviewRequest;
+import com.luxora.commerce.common.exception.UnauthorizedException;
 import com.luxora.commerce.order.dto.OrderResponse;
 import com.luxora.commerce.order.dto.OrderSummaryResponse;
 import com.luxora.commerce.order.service.OrderCancellationService;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -43,12 +45,16 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create order", description = "Creates a pending order from the authenticated user's current cart without processing payment.")
+    @Operation(summary = "Create order", description = "Creates a pending order from the cart without processing payment.")
     @SecurityRequirement(name = "bearerAuth")
     OrderResponse createOrder(
             @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestHeader(name = "X-Cart-Id", required = false) String cartId,
             @Valid @RequestBody CheckoutPreviewRequest request) {
-        return orderService.createOrder(user, request);
+        if (user == null && (cartId == null || cartId.isBlank())) {
+            throw new UnauthorizedException("UNAUTHORIZED", "Authentication or X-Cart-Id header is required");
+        }
+        return orderService.createOrder(user, cartId, request);
     }
 
     @GetMapping
@@ -62,16 +68,26 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/cancel")
-    @Operation(summary = "Cancel order", description = "Cancels a pending order owned by the authenticated user and restores inventory.")
+    @Operation(summary = "Cancel order", description = "Cancels a pending order owned by the customer and restores inventory.")
     @SecurityRequirement(name = "bearerAuth")
-    OrderResponse cancelOrder(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id) {
-        return orderCancellationService.cancelCustomerOrder(user, id);
+    OrderResponse cancelOrder(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestHeader(name = "X-Guest-Access-Token", required = false) String guestTokenHeader,
+            @RequestParam(name = "token", required = false) String guestTokenParam,
+            @PathVariable UUID id) {
+        String guestToken = guestTokenHeader != null ? guestTokenHeader : guestTokenParam;
+        return orderCancellationService.cancelCustomerOrder(user, guestToken, id);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get order", description = "Returns a safe order snapshot for the authenticated owner.")
+    @Operation(summary = "Get order", description = "Returns a safe order snapshot for the owner or guest with valid access token.")
     @SecurityRequirement(name = "bearerAuth")
-    OrderResponse getOrder(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id) {
-        return orderService.getOrder(user, id);
+    OrderResponse getOrder(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @RequestHeader(name = "X-Guest-Access-Token", required = false) String guestTokenHeader,
+            @RequestParam(name = "token", required = false) String guestTokenParam,
+            @PathVariable UUID id) {
+        String guestToken = guestTokenHeader != null ? guestTokenHeader : guestTokenParam;
+        return orderService.getOrder(user, guestToken, id);
     }
 }

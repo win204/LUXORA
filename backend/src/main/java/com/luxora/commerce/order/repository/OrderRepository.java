@@ -3,6 +3,7 @@ package com.luxora.commerce.order.repository;
 import com.luxora.commerce.order.model.Order;
 import com.luxora.commerce.order.model.OrderStatus;
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -20,12 +21,30 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     long countByStatus(OrderStatus status);
 
+    @Query("select coalesce(sum(o.grandTotal), 0.0) from Order o where o.status in :statuses")
+    BigDecimal sumGrandTotalByStatusIn(@Param("statuses") Collection<OrderStatus> statuses);
+
+    @Query("select coalesce(sum(o.grandTotal), 0.0) from Order o where o.status in :statuses and o.createdAt >= :since")
+    BigDecimal sumGrandTotalByStatusInAndCreatedAtAfter(
+            @Param("statuses") Collection<OrderStatus> statuses,
+            @Param("since") Instant since);
+
+    long countByStatusIn(Collection<OrderStatus> statuses);
+
+    @Query("select o.status, count(o) from Order o group by o.status")
+    List<Object[]> countOrdersByStatusGrouped();
+
+    @Query("select o.createdAt, o.grandTotal from Order o where o.status in :statuses and o.createdAt >= :since order by o.createdAt asc")
+    List<Object[]> findTimelineOrders(
+            @Param("statuses") Collection<OrderStatus> statuses,
+            @Param("since") Instant since);
+
     @Query("""
             select o from Order o
             left join o.shipment shipment
             where (:status is null or o.status = :status)
               and (:orderId is null or o.id = :orderId)
-              and (:customerEmail is null or lower(o.user.email) like lower(concat('%', :customerEmail, '%')))
+              and (:customerEmail is null or lower(o.customerEmail) like lower(concat('%', :customerEmail, '%')))
               and (:trackingNumber is null or lower(shipment.trackingNumber) like lower(concat('%', :trackingNumber, '%')))
               and (:dateFrom is null or o.createdAt >= :dateFrom)
               and (:dateTo is null or o.createdAt <= :dateTo)
@@ -52,6 +71,15 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("select o from Order o where o.id = :id")
     Optional<Order> findAdminByIdForUpdate(@Param("id") UUID id);
 
+    @EntityGraph(attributePaths = {"items", "shipment"})
+    @Query("select o from Order o where o.id = :id")
+    Optional<Order> findWithItemsById(@Param("id") UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {"items", "shipment"})
+    @Query("select o from Order o where o.id = :id")
+    Optional<Order> findWithItemsByIdForUpdate(@Param("id") UUID id);
+
     @EntityGraph(attributePaths = "items")
     Optional<Order> findByIdAndUserId(UUID id, UUID userId);
 
@@ -66,4 +94,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @EntityGraph(attributePaths = "items")
     @Query("select o from Order o where o.id = :id and o.user.id = :userId")
     Optional<Order> findByIdAndUserIdForUpdate(@Param("id") UUID id, @Param("userId") UUID userId);
+
+    @Query("""
+            select case when count(o) > 0 then true else false end
+            from Order o join o.items item
+            where o.user.id = :userId
+              and item.productId = :productId
+              and o.status = com.luxora.commerce.order.model.OrderStatus.DELIVERED
+            """)
+    boolean hasDeliveredOrderForProduct(@Param("userId") UUID userId, @Param("productId") UUID productId);
 }

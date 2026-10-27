@@ -10,4 +10,7 @@ public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
     boolean existsByOrder_Id(UUID orderId);
 
     Optional<Shipment> findByOrder_Id(UUID orderId);
+
+    Optional<Shipment> findByTrackingNumber(String trackingNumber);
 }
+

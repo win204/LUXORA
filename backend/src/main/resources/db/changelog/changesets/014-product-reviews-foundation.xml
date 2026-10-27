@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="014-01-create-reviews-table" author="luxora">
+        <createTable tableName="reviews">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="product_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_reviews_product" references="products(id)"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_reviews_user" references="users(id)"/>
+            </column>
+            <column name="order_id" type="UUID">
+                <constraints nullable="true" foreignKeyName="fk_reviews_order" references="orders(id)"/>
+            </column>
+            <column name="rating" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(200)"/>
+            <column name="comment" type="VARCHAR(2000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(30)" defaultValue="APPROVED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_verified_purchase" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="reviews"
+                             columnNames="product_id, user_id"
+                             constraintName="uk_reviews_product_user"/>
+
+        <createIndex tableName="reviews" indexName="idx_reviews_product_status">
+            <column name="product_id"/>
+            <column name="status"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <createIndex tableName="reviews" indexName="idx_reviews_user">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex tableName="reviews" indexName="idx_reviews_status">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="014-02-create-review-images-table" author="luxora">
+        <createTable tableName="review_images">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="review_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_review_images_review" references="reviews(id)" deleteCascade="true"/>
+            </column>
+            <column name="image_url" type="VARCHAR(1000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="display_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="datetimeoffset(7)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="review_images" indexName="idx_review_images_review">
+            <column name="review_id"/>
+            <column name="display_order"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
