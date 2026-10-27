@@ -24,7 +24,7 @@ import com.luxora.commerce.banner.model.Banner;
 import com.luxora.commerce.banner.repository.BannerRepository;
 
 @Component
-@Profile("local")
+@Profile({"local", "demo"})
 @Order(2)
 @ConditionalOnProperty(prefix = "luxora.seed.catalog", name = "extended", havingValue = "true")
 class ExtendedCatalogSeedDataLoader implements ApplicationRunner {

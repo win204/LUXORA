@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-@Profile("local")
+@Profile({"local", "demo"})
 @Order(1)
 @ConditionalOnProperty(prefix = "luxora.seed.catalog", name = "enabled", havingValue = "true")
 class CatalogSeedDataLoader implements ApplicationRunner {

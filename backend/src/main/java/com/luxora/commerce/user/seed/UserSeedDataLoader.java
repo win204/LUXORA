@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-@Profile("local")
+@Profile({"local", "demo"})
 @ConditionalOnProperty(prefix = "luxora.seed.users", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class UserSeedDataLoader implements ApplicationRunner {
 

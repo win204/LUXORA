@@ -33,6 +33,7 @@ luxora:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   cart:
+    store: ${CART_STORE:redis}
     ttl: ${CART_TTL:PT24H}
   returns:
     window: ${RETURN_WINDOW:P14D}

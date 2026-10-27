@@ -1,13 +1,27 @@
 services:
-  # 1. LUXORA Backend API (Spring Boot 3.4.3 / Java 21)
+  # 1. LUXORA Backend API (Spring Boot / Java 21) - 100% Free Plan
   - type: web
     name: luxora-backend
     runtime: docker
+    plan: free
     rootDir: backend
     dockerfilePath: ./Dockerfile
     envVars:
       - key: SPRING_PROFILES_ACTIVE
-        value: prod
+        value: demo
+      - key: CORS_ALLOWED_ORIGINS
+        value: "*"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_COOKIE_SECURE
+        value: "true"
+      - key: REFRESH_COOKIE_SAME_SITE
+        value: "None"
+      - key: REFRESH_COOKIE_PATH
+        value: "/api/v1/auth"
+      - key: JAVA_OPTS
+        value: "-XX:MaxRAMPercentage=75.0 -Xmx350m -Xss512k -XX:+UseSerialGC"
+      # (Optional) External SQL Server / Redis if you want to override the free embedded demo mode
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_USERNAME
@@ -15,35 +29,19 @@ services:
       - key: DATABASE_PASSWORD
         sync: false
       - key: REDIS_HOST
-        fromService:
-          type: redis
-          name: luxora-redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          type: redis
-          name: luxora-redis
-          property: port
-      - key: JWT_SECRET
-        generateValue: true
-      - key: CORS_ALLOWED_ORIGINS
         sync: false
-      - key: REFRESH_COOKIE_SECURE
-        value: "true"
-      - key: REFRESH_COOKIE_SAME_SITE
-        value: "None"
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
 
-  # 2. LUXORA Frontend Web App (Next.js 16 / React 19)
+  # 2. LUXORA Frontend Web App (Next.js 16 / React 19) - 100% Free Plan
   - type: web
     name: luxora-frontend
     runtime: docker
+    plan: free
     rootDir: frontend
     dockerfilePath: ./Dockerfile
     envVars:
       - key: NEXT_PUBLIC_API_BASE_URL
         sync: false
-
-  # 3. LUXORA Cache & Session (Redis)
-  - type: redis
-    name: luxora-redis
-    ipAllowList: [] # internal secure access

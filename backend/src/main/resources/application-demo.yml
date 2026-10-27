@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:/tmp/luxoradb;MODE=MSSQLServer;DATABASE_TO_UPPER=false;DEFAULT_NULL_ORDERING=HIGH}
+    driver-class-name: org.h2.Driver
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+  liquibase:
+    enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+luxora:
+  cart:
+    store: in-memory
+  seed:
+    catalog:
+      enabled: true
+      extended: true
+    users:
+      enabled: true
+  auth:
+    refresh-cookie:
+      secure: ${REFRESH_COOKIE_SECURE:true}
+      same-site: ${REFRESH_COOKIE_SAME_SITE:None}
+      path: ${REFRESH_COOKIE_PATH:/api/v1/auth}
