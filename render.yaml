@@ -1,11 +1,10 @@
 services:
-  # LUXORA Backend API (Spring Boot 3.4.3 / Java 21)
+  # 1. LUXORA Backend API (Spring Boot 3.4.3 / Java 21)
   - type: web
     name: luxora-backend
     runtime: docker
     rootDir: backend
     dockerfilePath: ./Dockerfile
-    plan: standard
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
@@ -16,24 +15,35 @@ services:
       - key: DATABASE_PASSWORD
         sync: false
       - key: REDIS_HOST
-        sync: false
+        fromService:
+          type: redis
+          name: luxora-redis
+          property: host
       - key: REDIS_PORT
-        sync: false
+        fromService:
+          type: redis
+          name: luxora-redis
+          property: port
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      - key: REFRESH_COOKIE_SECURE
+        value: "true"
+      - key: REFRESH_COOKIE_SAME_SITE
+        value: "None"
 
-  # LUXORA Frontend Web App (Next.js 16 / React 19)
+  # 2. LUXORA Frontend Web App (Next.js 16 / React 19)
   - type: web
     name: luxora-frontend
     runtime: docker
     rootDir: frontend
     dockerfilePath: ./Dockerfile
-    plan: standard
     envVars:
       - key: NEXT_PUBLIC_API_BASE_URL
-        fromService:
-          type: web
-          name: luxora-backend
-          property: host
+        sync: false
+
+  # 3. LUXORA Cache & Session (Redis)
+  - type: redis
+    name: luxora-redis
+    ipAllowList: [] # internal secure access
