@@ -12,7 +12,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @EntityGraph(attributePaths = "roles")
     Optional<User> findByEmail(String email);
 
+    @Override
+    @EntityGraph(attributePaths = "roles")
+    Optional<User> findById(UUID id);
+
     boolean existsByEmail(String email);
+
+    @EntityGraph(attributePaths = "roles")
+    java.util.List<User> findAllByOrderByCreatedAtDesc();
 
     long countByCreatedAtAfter(Instant since);
 }

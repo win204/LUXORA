@@ -735,5 +735,25 @@ export type BannerUpsertPayload = {
   endsAt?: string | null;
 };
 
+export type AdminUserResponse = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  enabled: boolean;
+  roles: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminCreateUserPayload = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role?: string;
+};
+
 
 

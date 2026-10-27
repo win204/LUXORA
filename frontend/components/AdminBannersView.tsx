@@ -151,16 +151,58 @@ export function AdminBannersView() {
     }
   }
 
+  const totalBanners = banners.length;
+  const activeBannersCount = banners.filter((b) => b.active).length;
+  const hiddenBannersCount = banners.filter((b) => !b.active).length;
+
   return (
     <AdminShell>
-      <div className="admin-heading admin-heading-row">
+      <div className="admin-heading admin-heading-row" style={{ marginBottom: 24 }}>
         <div>
-          <p className="eyebrow">Content & Marketing</p>
-          <h1>Quản Lý Banner Quảng Cáo</h1>
+          <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--accent-gold, #B38A38)", fontWeight: 600 }}>
+            Truyền Thông & Quảng Bá
+          </span>
+          <h1 style={{ margin: "4px 0 0", fontFamily: "var(--font-display), serif", fontSize: "1.9rem", color: "#1B1612" }}>
+            Quản Lý Banner Trang Chủ
+          </h1>
+          <p style={{ margin: "4px 0 0", color: "#666", fontSize: "0.95rem" }}>
+            Điều chỉnh các banner chuyển động Hero Carousel, thứ tự hiển thị và thông điệp tiếp thị.
+          </p>
         </div>
-        <Button type="button" onClick={openCreateModal}>
+        <Button type="button" onClick={openCreateModal} style={{ background: "linear-gradient(135deg, #C5A059 0%, #A87932 100%)", color: "#FFF", border: "none" }}>
           + Tạo Banner Mới
         </Button>
+      </div>
+
+      {/* Metric Stat Cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 16,
+          marginBottom: 24
+        }}
+      >
+        <div style={{ background: "#FFF", border: "1px solid rgba(179, 138, 56, 0.25)", borderRadius: 12, padding: "18px 22px" }}>
+          <span style={{ fontSize: "0.75rem", color: "#777", textTransform: "uppercase", letterSpacing: "0.08em" }}>Tổng Banner</span>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1B1612", marginTop: 4 }}>{totalBanners}</div>
+          <span style={{ fontSize: "0.8rem", color: "#888" }}>Toàn bộ chiến dịch</span>
+        </div>
+
+        <div style={{ background: "#FFF", border: "1px solid rgba(34, 197, 94, 0.25)", borderRadius: 12, padding: "18px 22px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", display: "inline-block" }} />
+            <span style={{ fontSize: "0.75rem", color: "#777", textTransform: "uppercase", letterSpacing: "0.08em" }}>Đang Hiển Thị</span>
+          </div>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#166534", marginTop: 4 }}>{activeBannersCount}</div>
+          <span style={{ fontSize: "0.8rem", color: "#888" }}>Chạy trên Hero Carousel</span>
+        </div>
+
+        <div style={{ background: "#FFF", border: "1px solid rgba(156, 163, 175, 0.3)", borderRadius: 12, padding: "18px 22px" }}>
+          <span style={{ fontSize: "0.75rem", color: "#777", textTransform: "uppercase", letterSpacing: "0.08em" }}>Tạm Ẩn</span>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#6B7280", marginTop: 4 }}>{hiddenBannersCount}</div>
+          <span style={{ fontSize: "0.8rem", color: "#888" }}>Bảo lưu trong kho</span>
+        </div>
       </div>
 
       {actionSuccess ? (
@@ -315,6 +357,55 @@ export function AdminBannersView() {
                 &times;
               </button>
             </div>
+
+            {!editingBanner && (
+              <div style={{ marginBottom: 16, padding: "12px 14px", background: "#FAF8F5", borderRadius: 8, border: "1px dashed rgba(179, 138, 56, 0.4)" }}>
+                <span style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#8B6F38", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  ✨ Mẫu nội dung sang trọng có sẵn:
+                </span>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTitle("Haute Horlogerie Grand Exhibition");
+                      setSubtitle("Nghệ thuật chế tác đồng hồ Thụy Sỹ đỉnh cao — Cơ cấu chuyển động phức tạp & hoàn thiện thủ công.");
+                      setImageUrl("https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1600&auto=format&fit=crop&q=80");
+                      setLinkUrl("/shop");
+                      setCtaText("Khám phá đồng hồ");
+                    }}
+                    style={{ fontSize: "0.75rem", padding: "4px 10px", borderRadius: 6, border: "1px solid #D5CFC9", background: "#FFF", cursor: "pointer" }}
+                  >
+                    ⌚ Đồng hồ Di sản
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTitle("Celestial Diamond & High Jewelry");
+                      setSubtitle("Tuyệt phẩm trang sức chế tác tinh xảo trên nền Platinum & vàng hồng 18K cùng kim cương thiên nhiên.");
+                      setImageUrl("https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1600&auto=format&fit=crop&q=80");
+                      setLinkUrl("/shop");
+                      setCtaText("Khám phá trang sức");
+                    }}
+                    style={{ fontSize: "0.75rem", padding: "4px 10px", borderRadius: 6, border: "1px solid #D5CFC9", background: "#FFF", cursor: "pointer" }}
+                  >
+                    💎 Trang sức Kim cương
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTitle("Private Salon & Bespoke Concierge");
+                      setSubtitle("Dịch vụ đặc quyền thượng lưu — Trợ lý cá nhân 24/7, giao hàng White-Glove & tích điểm VIP.");
+                      setImageUrl("https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1600&auto=format&fit=crop&q=80");
+                      setLinkUrl("/account");
+                      setCtaText("Đặc quyền VIP");
+                    }}
+                    style={{ fontSize: "0.75rem", padding: "4px 10px", borderRadius: 6, border: "1px solid #D5CFC9", background: "#FFF", cursor: "pointer" }}
+                  >
+                    👑 Đặc quyền VIP
+                  </button>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
               <div>
